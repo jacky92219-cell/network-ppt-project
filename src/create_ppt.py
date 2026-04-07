@@ -27,6 +27,10 @@ def create_presentation():
             print(f"WARNING: unknown slide type '{slide_type}', skipping")
             continue
         builder_fn(slide, slide_data)
+        # 寫入演講稿備忘錄
+        if slide_data.get("speaker_notes"):
+            notes_slide = slide.notes_slide
+            notes_slide.notes_text_frame.text = slide_data["speaker_notes"]
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     prs.save(OUTPUT_PATH)
