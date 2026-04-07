@@ -4,7 +4,26 @@ from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_CONNECTOR
+from pptx.oxml.ns import qn
+from lxml import etree
 import theme
+
+
+def _add_arrowhead(connector):
+    """在 connector 末端加箭頭"""
+    sp = connector._element
+    spPr = sp.find(qn('p:spPr'))
+    if spPr is None:
+        return
+    ln = spPr.find(qn('a:ln'))
+    if ln is None:
+        return
+    for old in ln.findall(qn('a:tailEnd')):
+        ln.remove(old)
+    tailEnd = etree.SubElement(ln, qn('a:tailEnd'))
+    tailEnd.set('type', 'arrow')
+    tailEnd.set('w', 'med')
+    tailEnd.set('len', 'med')
 
 def set_slide_background(slide, color: RGBColor):
     """設定投影片背景色"""
@@ -34,16 +53,16 @@ def add_textbox(slide, text, left, top, width, height,
 def add_title(slide, title_text, section: int = 0):
     """新增標準標題列"""
     left = Inches(0.4)
-    top = Inches(0.2)
+    top = Inches(0.15)
     width = Inches(9.2)
-    height = Inches(0.8)
+    height = Inches(1.0)  # 加高：呼吸空間
     add_textbox(slide, title_text, left, top, width, height,
                 font_name=theme.FONT_TITLE, font_size=theme.TITLE_SIZE,
                 color=get_title_color(section), bold=True)
-    # 標題下方分隔線
+    # 標題下方分隔線（配合加高後的位置）
     connector = slide.shapes.add_connector(
         MSO_CONNECTOR.STRAIGHT,
-        left, Inches(1.0), left + width, Inches(1.0)
+        left, Inches(1.1), left + width, Inches(1.1)
     )
     connector.line.color.rgb = get_title_color(section)
     connector.line.width = Pt(1.5)
@@ -86,14 +105,23 @@ def build_cover(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
     section = data.get("section", 0)
     add_section_bar(slide, section)
+    # 主標題：垂直居中偏上（2.0" 比原本 1.5" 更接近黃金比例）
     add_textbox(slide, data["title"],
-                Inches(0.5), Inches(1.5), Inches(9.0), Inches(1.5),
+                Inches(0.5), Inches(1.8), Inches(9.0), Inches(1.5),
                 font_name=theme.FONT_TITLE, font_size=Pt(44),
                 color=theme.PRIMARY_COLOR, bold=True, align=PP_ALIGN.CENTER)
+    # 主副標之間的裝飾線
+    dec_line = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT,
+        Inches(2.0), Inches(3.5), Inches(8.0), Inches(3.5)
+    )
+    dec_line.line.color.rgb = theme.SECTION_COLORS[1]
+    dec_line.line.width = Pt(1.2)
+    # 副標題：用 section 1 淡藍色
     add_textbox(slide, data["subtitle"],
-                Inches(0.5), Inches(3.0), Inches(9.0), Inches(1.2),
+                Inches(0.5), Inches(3.6), Inches(9.0), Inches(1.2),
                 font_size=theme.SUBTITLE_SIZE,
-                color=theme.SUBTEXT_COLOR, align=PP_ALIGN.CENTER)
+                color=theme.SECTION_COLORS[1], align=PP_ALIGN.CENTER)
     add_textbox(slide, data["date"],
                 Inches(0.5), Inches(6.5), Inches(9.0), Inches(0.5),
                 font_size=theme.SMALL_SIZE,
@@ -107,9 +135,9 @@ def build_bullets(slide, data):
     add_section_bar(slide, section)
     add_title(slide, data["title"], section)
     left = Inches(0.5)
-    top = Inches(1.2)
+    top = Inches(1.3)   # 下移：呼吸空間
     width = Inches(9.0)
-    height = Inches(5.5)
+    height = Inches(5.3)
     txBox = slide.shapes.add_textbox(left, top, width, height)
     tf = txBox.text_frame
     tf.word_wrap = True
@@ -122,15 +150,18 @@ def build_bullets(slide, data):
             p = tf.add_paragraph()
         run = p.add_run()
         run.text = bullet
-        if bullet.startswith("  "):
-            run.font.size = Pt(16)
+        if bullet == "":
+            run.font.size = Pt(6)
+            p.space_before = Pt(2)
+        elif bullet.startswith("  "):
+            run.font.size = Pt(15)
             run.font.color.rgb = theme.SUBTEXT_COLOR
             p.level = 1
-        elif bullet == "":
-            run.font.size = Pt(8)
+            p.space_before = Pt(2)
         else:
             run.font.size = theme.BODY_SIZE
             run.font.color.rgb = theme.TEXT_COLOR
+            p.space_before = Pt(5)
             if bullet.startswith("▶") or bullet.endswith("：") or (len(bullet) > 1 and bullet[0].isdigit()):
                 run.font.bold = True
                 run.font.color.rgb = theme.PRIMARY_COLOR
@@ -146,9 +177,9 @@ def build_two_col(slide, data):
     add_title(slide, data["title"], section)
 
     def add_col(title, bullets, left):
-        add_textbox(slide, title, left, Inches(1.2), Inches(4.3), Inches(0.5),
+        add_textbox(slide, title, left, Inches(1.3), Inches(4.3), Inches(0.5),
                     font_size=Pt(18), color=theme.ACCENT_COLOR, bold=True)
-        txBox = slide.shapes.add_textbox(left, Inches(1.8), Inches(4.3), Inches(4.8))
+        txBox = slide.shapes.add_textbox(left, Inches(1.9), Inches(4.3), Inches(4.6))
         tf = txBox.text_frame
         tf.word_wrap = True
         first = True
@@ -160,14 +191,17 @@ def build_two_col(slide, data):
                 p = tf.add_paragraph()
             run = p.add_run()
             run.text = b
-            if b.startswith("  "):
+            if b == "":
+                run.font.size = Pt(6)
+                p.space_before = Pt(2)
+            elif b.startswith("  "):
                 run.font.size = Pt(14)
                 run.font.color.rgb = theme.SUBTEXT_COLOR
-            elif b == "":
-                run.font.size = Pt(6)
+                p.space_before = Pt(2)
             else:
                 run.font.size = Pt(16)
                 run.font.color.rgb = theme.TEXT_COLOR
+                p.space_before = Pt(4)
                 if b.startswith("✅") or b.startswith("❌") or b.startswith("⚠") or b.startswith("✗"):
                     run.font.bold = True
 
@@ -192,9 +226,9 @@ def build_table(slide, data):
     rows = len(data["rows"]) + 1
     cols = len(data["headers"])
     left = Inches(0.3)
-    top = Inches(1.2)
+    top = Inches(1.3)
     width = Inches(9.4)
-    height = Inches(0.4 * rows + 0.1)
+    height = Inches(0.5 * rows + 0.1)   # 加高：呼吸空間
     table = slide.shapes.add_table(rows, cols, left, top, width, height).table
     col_width = int(width / cols)
     for i in range(cols):
@@ -204,6 +238,10 @@ def build_table(slide, data):
         cell.text = hdr
         cell.fill.solid()
         cell.fill.fore_color.rgb = theme.TABLE_HDR_BG
+        cell.margin_left = Inches(0.08)
+        cell.margin_right = Inches(0.08)
+        cell.margin_top = Inches(0.05)
+        cell.margin_bottom = Inches(0.05)
         p = cell.text_frame.paragraphs[0]
         run = p.runs[0] if p.runs else p.add_run()
         run.font.bold = True
@@ -218,10 +256,19 @@ def build_table(slide, data):
             cell.text = val
             cell.fill.solid()
             cell.fill.fore_color.rgb = bg
+            cell.margin_left = Inches(0.08)
+            cell.margin_right = Inches(0.08)
+            cell.margin_top = Inches(0.04)
+            cell.margin_bottom = Inches(0.04)
             p = cell.text_frame.paragraphs[0]
             run = p.runs[0] if p.runs else p.add_run()
             run.font.size = Pt(13)
-            run.font.color.rgb = theme.TEXT_COLOR
+            # 第一欄加粗並用主色，強化視覺層次
+            if ci == 0:
+                run.font.bold = True
+                run.font.color.rgb = theme.PRIMARY_COLOR
+            else:
+                run.font.color.rgb = theme.TEXT_COLOR
             run.font.name = theme.FONT_BODY
     if "note" in data:
         add_note(slide, data["note"])
@@ -249,6 +296,10 @@ def build_flow(slide, data):
         shape.line.color.rgb = theme.PRIMARY_COLOR
         tf = shape.text_frame
         tf.word_wrap = True
+        tf.margin_left = Inches(0.06)
+        tf.margin_right = Inches(0.06)
+        tf.margin_top = Inches(0.08)
+        tf.margin_bottom = Inches(0.08)
         p = tf.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         run = p.add_run()
@@ -261,11 +312,17 @@ def build_flow(slide, data):
                     font_size=Pt(11), color=theme.SUBTEXT_COLOR,
                     align=PP_ALIGN.CENTER)
         if i < n - 1:
-            arr_x = x + box_w
-            arr = slide.shapes.add_shape(1, arr_x, y + box_h/2 - Pt(3), gap, Pt(6))
-            arr.fill.solid()
-            arr.fill.fore_color.rgb = theme.PRIMARY_COLOR
+            # 用箭頭 Connector 取代填滿矩形
+            arr_x1 = x + box_w
+            arr_x2 = x + box_w + gap
+            arr_y = y + box_h / 2
+            arr = slide.shapes.add_connector(
+                MSO_CONNECTOR.STRAIGHT,
+                arr_x1, arr_y, arr_x2, arr_y
+            )
             arr.line.color.rgb = theme.PRIMARY_COLOR
+            arr.line.width = Pt(1.5)
+            _add_arrowhead(arr)
     if "note" in data:
         add_note(slide, data["note"])
     if data.get("_slide_num"):
