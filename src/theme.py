@@ -14,9 +14,9 @@ TABLE_ROW_ALT  = RGBColor(0x1e, 0x2a, 0x4a)   # 交替列背景
 # 字型大小
 TITLE_SIZE     = Pt(36)
 SUBTITLE_SIZE  = Pt(24)
-BODY_SIZE      = Pt(18)
+BODY_SIZE      = Pt(20)
 SMALL_SIZE     = Pt(14)
-CODE_SIZE      = Pt(14)
+CODE_SIZE      = Pt(16)
 
 # 字型名稱
 FONT_TITLE     = "Calibri"

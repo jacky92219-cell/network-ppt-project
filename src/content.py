@@ -288,6 +288,7 @@ SLIDES = [
             "  開源 + 可修改驅動 + 彈性的核心介面",
             "  不是 Windows 的「bug」，是設計哲學差異",
         ],
+        "note": "Linux 的可行性來自開源生態，不是 Windows 的設計缺陷",
     },
     # Slide 16: linux-80211n-csitool
     {
