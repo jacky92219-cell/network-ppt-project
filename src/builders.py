@@ -5,7 +5,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_CONNECTOR
 from pptx.oxml.ns import qn
-from lxml import etree
+from pptx.oxml.xmlchemy import OxmlElement
 import theme
 
 
@@ -20,10 +20,11 @@ def _add_arrowhead(connector):
         return
     for old in ln.findall(qn('a:tailEnd')):
         ln.remove(old)
-    tailEnd = etree.SubElement(ln, qn('a:tailEnd'))
+    tailEnd = OxmlElement('a:tailEnd')
     tailEnd.set('type', 'arrow')
     tailEnd.set('w', 'med')
     tailEnd.set('len', 'med')
+    ln.append(tailEnd)
 
 def set_slide_background(slide, color: RGBColor):
     """設定投影片背景色"""
