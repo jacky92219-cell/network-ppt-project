@@ -20,18 +20,17 @@ def create_presentation():
     blank_layout = prs.slide_layouts[6]  # completely blank layout
 
     for idx, slide_data in enumerate(content.SLIDES):
-        slide_data["_slide_num"] = idx + 1  # inject slide number
+        enriched = {**slide_data, "_slide_num": idx + 1}
         slide = prs.slides.add_slide(blank_layout)
-        slide_type = slide_data["type"]
+        slide_type = enriched["type"]
         builder_fn = builders.BUILDERS.get(slide_type)
         if builder_fn is None:
             print(f"WARNING: unknown slide type '{slide_type}', skipping")
             continue
-        builder_fn(slide, slide_data)
-        # 寫入演講稿備忘錄
-        if slide_data.get("speaker_notes"):
+        builder_fn(slide, enriched)
+        if enriched.get("speaker_notes"):
             notes_slide = slide.notes_slide
-            notes_slide.notes_text_frame.text = slide_data["speaker_notes"]
+            notes_slide.notes_text_frame.text = enriched["speaker_notes"]
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     prs.save(OUTPUT_PATH)

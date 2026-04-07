@@ -3,6 +3,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+from pptx.enum.shapes import MSO_CONNECTOR
 import theme
 
 def set_slide_background(slide, color: RGBColor):
@@ -40,7 +41,6 @@ def add_title(slide, title_text, section: int = 0):
                 font_name=theme.FONT_TITLE, font_size=theme.TITLE_SIZE,
                 color=get_title_color(section), bold=True)
     # 標題下方分隔線
-    from pptx.enum.shapes import MSO_CONNECTOR
     connector = slide.shapes.add_connector(
         MSO_CONNECTOR.STRAIGHT,
         left, Inches(1.0), left + width, Inches(1.0)
@@ -59,8 +59,7 @@ def add_note(slide, note_text):
 
 def add_slide_number(slide, number: int, section: int = 0):
     """右下角頁碼"""
-    import theme as _theme
-    sec_color = _theme.SECTION_COLORS.get(section, _theme.SUBTEXT_COLOR) if section > 0 else _theme.SUBTEXT_COLOR
+    sec_color = theme.SECTION_COLORS.get(section, theme.SUBTEXT_COLOR) if section > 0 else theme.SUBTEXT_COLOR
     add_textbox(slide, str(number),
                 Inches(9.0), Inches(6.9), Inches(0.6), Inches(0.4),
                 font_size=Pt(12), color=sec_color, align=PP_ALIGN.RIGHT)
@@ -173,7 +172,6 @@ def build_two_col(slide, data):
                     run.font.bold = True
 
     add_col(data["left_title"], data["left_bullets"], Inches(0.3))
-    from pptx.enum.shapes import MSO_CONNECTOR
     div = slide.shapes.add_connector(
         MSO_CONNECTOR.STRAIGHT,
         Inches(4.8), Inches(1.1), Inches(4.8), Inches(6.6)

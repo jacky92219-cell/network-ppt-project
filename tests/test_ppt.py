@@ -15,7 +15,10 @@ def prs():
     return Presentation(PPT_PATH)
 
 def test_slide_count(prs):
-    assert len(prs.slides) >= 29
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+    import content as _content
+    assert len(prs.slides) == len(_content.SLIDES)
 
 def test_slide_dimensions(prs):
     assert prs.slide_width == theme.SLIDE_WIDTH

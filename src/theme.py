@@ -14,7 +14,7 @@ SOURCE_ANNOTATION_COLOR = RGBColor(0x66, 0xff, 0x66)  # 綠色，用於堆疊圖
 
 # 段落識別色（Section Colors）
 SECTION_COLORS = {
-    1: RGBColor(0x4a, 0x9e, 0xff),  # 第一段：PHY/MAC 基礎 — 藍
+    1: RGBColor(0x29, 0xb6, 0xf6),  # 第一段：PHY/MAC 基礎 — 淡藍（區別於主色）
     2: RGBColor(0x9c, 0x6e, 0xff),  # 第二段：Windows 驅動堆疊 — 紫
     3: RGBColor(0x00, 0xd9, 0xaa),  # 第三段：替代方案 — 青綠
     4: RGBColor(0xff, 0xcc, 0x44),  # 第四段：結語 — 金
