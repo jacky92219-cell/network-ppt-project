@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from pptx import Presentation
 import theme
 
-PPT_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'network-card-csi-v2.0.pptx')
+PPT_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'network-card-csi-v3.0.pptx')
 
 @pytest.fixture(scope="module")
 def prs():
@@ -33,3 +33,16 @@ def test_table_slides_exist(prs):
 def test_all_slides_have_shapes(prs):
     for i, slide in enumerate(prs.slides):
         assert len(slide.shapes) > 0, f"Slide {i+1} has no shapes"
+
+def test_no_offscreen_shapes(prs):
+    """確認所有 shape 都在投影片可見範圍內"""
+    for i, slide in enumerate(prs.slides):
+        for shape in slide.shapes:
+            bottom = shape.top + shape.height
+            right = shape.left + shape.width
+            assert bottom <= theme.SLIDE_HEIGHT + 1000, (
+                f"Slide {i+1} shape '{shape.name}' bottom={bottom} exceeds SLIDE_HEIGHT={theme.SLIDE_HEIGHT}"
+            )
+            assert right <= theme.SLIDE_WIDTH + 1000, (
+                f"Slide {i+1} shape '{shape.name}' right={right} exceeds SLIDE_WIDTH={theme.SLIDE_WIDTH}"
+            )

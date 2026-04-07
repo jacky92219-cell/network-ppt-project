@@ -1,5 +1,4 @@
 # src/builders.py
-from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
@@ -29,8 +28,8 @@ def _add_arrowhead(connector):
     ln.append(tailEnd)
 
 
-def _darken(color: RGBColor, factor: float = 0.6) -> RGBColor:
-    """把 RGBColor 調暗（factor=0.6 → 60% 亮度）"""
+def _darken(color: RGBColor, factor: float = 0.5) -> RGBColor:
+    """把 RGBColor 調暗（factor=0.5 → 50% 亮度）"""
     return RGBColor(
         int(color[0] * factor),
         int(color[1] * factor),
@@ -38,10 +37,25 @@ def _darken(color: RGBColor, factor: float = 0.6) -> RGBColor:
     )
 
 
+def _set_rounded_corner(shape, val: int = 16667):
+    """設定圓角矩形的圓角程度（type 5）"""
+    adj = shape._element.spPr.find(qn('a:prstGeom'))
+    if adj is None:
+        return
+    avLst = adj.find(qn('a:avLst'))
+    if avLst is None:
+        return
+    for gd in avLst.findall(qn('a:gd')):
+        avLst.remove(gd)
+    gd_el = OxmlElement('a:gd')
+    gd_el.set('name', 'adj')
+    gd_el.set('fmla', f'val {val}')
+    avLst.append(gd_el)
+
+
 # ─────────────────────── 基礎元件 ───────────────────────
 
 def set_slide_background(slide, color: RGBColor):
-    """設定投影片背景色"""
     background = slide.background
     fill = background.fill
     fill.solid()
@@ -52,8 +66,9 @@ def add_textbox(slide, text, left, top, width, height,
                 font_name=theme.FONT_BODY, font_size=theme.BODY_SIZE,
                 color=theme.TEXT_COLOR, bold=False, align=PP_ALIGN.LEFT,
                 word_wrap=True):
-    """新增文字方塊"""
-    txBox = slide.shapes.add_textbox(left, top, width, height)
+    txBox = slide.shapes.add_textbox(
+        int(left), int(top), int(width), int(height)
+    )
     tf = txBox.text_frame
     tf.word_wrap = word_wrap
     p = tf.paragraphs[0]
@@ -67,135 +82,97 @@ def add_textbox(slide, text, left, top, width, height,
     return txBox
 
 
-# ─────────────────────── 共用裝飾元件（v2.0） ───────────────────────
+# ─────────────────────── Grid-aware 共用裝飾元件 ───────────────────────
 
 def add_title_bar(slide, title_text: str, section: int = 0):
     """全寬標題列：暗色背景 + section 色底線 + 白色標題文字"""
-    bar_h = theme.TITLE_BAR_HEIGHT
+    bar_h = int(theme.TITLE_BAR_H)
     bar_color = theme.TITLE_BAR_COLORS.get(section, theme.TITLE_BAR_COLORS[0])
     sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
 
-    # 標題背景色塊
-    bar = slide.shapes.add_shape(1,
-        int(0), int(0),
-        int(theme.SLIDE_WIDTH), int(bar_h))
+    bar = slide.shapes.add_shape(1, 0, 0, int(theme.SLIDE_WIDTH), bar_h)
     bar.fill.solid()
     bar.fill.fore_color.rgb = bar_color
     bar.line.fill.background()
 
     # 底部 section-color 亮線
-    line_y = int(bar_h)
     connector = slide.shapes.add_connector(
-        MSO_CONNECTOR.STRAIGHT,
-        int(0), line_y,
-        int(theme.SLIDE_WIDTH), line_y
+        MSO_CONNECTOR.STRAIGHT, 0, bar_h, int(theme.SLIDE_WIDTH), bar_h
     )
     connector.line.color.rgb = sec_color
-    connector.line.width = Pt(2.0)
+    connector.line.width = Pt(2.5)
 
     # 標題文字
     add_textbox(slide, title_text,
-                int(Inches(0.25)), int(Inches(0.12)),
-                int(Inches(9.3)), int(bar_h - Inches(0.12)),
+                int(theme.CONTENT_LEFT),
+                int(Inches(0.1)),
+                int(theme.CONTENT_WIDTH),
+                bar_h - int(Inches(0.1)),
                 font_name=theme.FONT_TITLE, font_size=theme.TITLE_SIZE,
                 color=theme.TEXT_COLOR, bold=True)
 
 
-def add_content_panel(slide, top, height, left=None, width=None):
-    """繪製內容區域背景面板（深色圓角矩形）"""
+def add_content_panel(slide, top=None, height=None, left=None, width=None):
+    """深色圓角矩形內容面板"""
     if left is None:
-        left = int(Inches(0.25))
+        left = int(theme.CONTENT_LEFT)
     if width is None:
-        width = int(theme.SLIDE_WIDTH - Inches(0.5))
-    panel = slide.shapes.add_shape(
-        5,  # MSO_SHAPE_TYPE.ROUNDED_RECTANGLE
-        int(left), int(top), int(width), int(height)
-    )
+        width = int(theme.CONTENT_WIDTH)
+    if top is None:
+        top = int(theme.CONTENT_TOP)
+    if height is None:
+        height = int(theme.CONTENT_HEIGHT)
+    panel = slide.shapes.add_shape(5, int(left), int(top), int(width), int(height))
     panel.fill.solid()
     panel.fill.fore_color.rgb = theme.PANEL_COLOR
     panel.line.color.rgb = theme.PANEL_BORDER
     panel.line.width = Pt(0.75)
-    # 設定圓角調整
-    adj = panel._element.spPr.find(qn('a:prstGeom'))
-    if adj is not None:
-        avLst = adj.find(qn('a:avLst'))
-        if avLst is not None:
-            for gd in avLst.findall(qn('a:gd')):
-                avLst.remove(gd)
-            gd_el = OxmlElement('a:gd')
-            gd_el.set('name', 'adj')
-            gd_el.set('fmla', 'val 16667')
-            avLst.append(gd_el)
+    _set_rounded_corner(panel, 10000)
     return panel
 
 
 def add_footer_bar(slide, number: int, section: int = 0):
     """底部資訊列：段落名稱 + 頁碼"""
-    footer_h = int(Inches(0.35))
-    footer_y = int(theme.SLIDE_HEIGHT - footer_h)
+    footer_h = int(theme.FOOTER_H)
+    footer_y = int(theme.SLIDE_HEIGHT - theme.FOOTER_H)
     sec_color = theme.SECTION_COLORS.get(section, theme.SUBTEXT_COLOR) if section > 0 else theme.PRIMARY_COLOR
     sec_name = theme.SECTION_NAMES.get(section, "")
 
-    # 底部深色背景
-    footer_bg = slide.shapes.add_shape(1,
-        int(0), footer_y,
-        int(theme.SLIDE_WIDTH), footer_h)
+    footer_bg = slide.shapes.add_shape(1, 0, footer_y, int(theme.SLIDE_WIDTH), footer_h)
     footer_bg.fill.solid()
     footer_bg.fill.fore_color.rgb = theme.PANEL_COLOR
     footer_bg.line.fill.background()
 
-    # 左側 section 色短線
+    # 頂部 section-color 細線
     connector = slide.shapes.add_connector(
-        MSO_CONNECTOR.STRAIGHT,
-        int(0), footer_y,
-        int(theme.SLIDE_WIDTH), footer_y
+        MSO_CONNECTOR.STRAIGHT, 0, footer_y, int(theme.SLIDE_WIDTH), footer_y
     )
     connector.line.color.rgb = sec_color
     connector.line.width = Pt(1.0)
 
-    # 段落名稱
+    text_h = int(footer_h - Inches(0.1))
     if sec_name:
         add_textbox(slide, sec_name,
-                    int(Inches(0.3)), footer_y,
-                    int(Inches(5.0)), footer_h,
-                    font_size=Pt(10), color=sec_color)
+                    int(Inches(0.3)), footer_y + int(Inches(0.05)),
+                    int(Inches(5.0)), text_h,
+                    font_size=Pt(11), color=sec_color)
 
-    # 頁碼
     add_textbox(slide, str(number),
-                int(Inches(8.8)), footer_y,
-                int(Inches(0.8)), footer_h,
-                font_size=Pt(10), color=theme.SUBTEXT_COLOR,
+                int(theme.CONTENT_RIGHT - Inches(0.8)),
+                footer_y + int(Inches(0.05)),
+                int(Inches(0.8)), text_h,
+                font_size=Pt(11), color=theme.SUBTEXT_COLOR,
                 align=PP_ALIGN.RIGHT)
 
 
 def add_note(slide, note_text):
-    """底部備註列"""
-    left = int(Inches(0.4))
-    top = int(theme.SLIDE_HEIGHT - Inches(0.75))
-    width = int(Inches(9.2))
-    height = int(Inches(0.45))
-    add_textbox(slide, f"▶ {note_text}", left, top, width, height,
+    """備註文字（使用 grid 常數，確保不與 footer 重疊）"""
+    add_textbox(slide, f"▶ {note_text}",
+                int(theme.CONTENT_LEFT + Inches(0.1)),
+                int(theme.NOTE_TOP),
+                int(theme.CONTENT_WIDTH - Inches(0.2)),
+                int(theme.NOTE_HEIGHT),
                 font_size=theme.SMALL_SIZE, color=theme.SUBTEXT_COLOR)
-
-
-def add_section_bar(slide, section: int):
-    """左側段落識別色條（保留相容性）"""
-    if section == 0:
-        return
-    color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR)
-    bar = slide.shapes.add_shape(1,
-        int(0), int(0),
-        int(theme.SECTION_BAR_WIDTH), int(theme.SLIDE_HEIGHT))
-    bar.fill.solid()
-    bar.fill.fore_color.rgb = color
-    bar.line.fill.background()
-
-
-def get_title_color(section: int) -> RGBColor:
-    """根據段落取標題色"""
-    if section == 0:
-        return theme.PRIMARY_COLOR
-    return theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR)
 
 
 # ─────────────────────── Builders ───────────────────────
@@ -203,62 +180,77 @@ def get_title_color(section: int) -> RGBColor:
 def build_cover(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
     section = data.get("section", 0)
+    sw = int(theme.SLIDE_WIDTH)
+    sh = int(theme.SLIDE_HEIGHT)
 
-    # 頂部裝飾幾何色塊群
-    deco_colors = [
-        theme.SECTION_COLORS[1],
-        theme.SECTION_COLORS[2],
-        theme.SECTION_COLORS[3],
-        theme.SECTION_COLORS[4],
-    ]
-    deco_positions = [
-        (int(Inches(0.1)), int(Inches(0.1)), int(Inches(1.4)), int(Inches(0.5))),
-        (int(Inches(1.6)), int(Inches(0.2)), int(Inches(0.9)), int(Inches(0.35))),
-        (int(Inches(0.3)), int(Inches(0.7)), int(Inches(0.6)), int(Inches(0.25))),
-        (int(Inches(2.6)), int(Inches(0.1)), int(Inches(0.5)), int(Inches(0.45))),
-    ]
-    for i, (x, y, w, h) in enumerate(deco_positions):
-        deco = slide.shapes.add_shape(1, x, y, w, h)
-        deco.fill.solid()
-        deco.fill.fore_color.rgb = _darken(deco_colors[i % len(deco_colors)], 0.5)
-        deco.line.fill.background()
+    # 幾何裝飾色塊（四角分佈，各用不同 section color）
+    # 左上大色塊（section 1 電光藍）
+    blk = slide.shapes.add_shape(1, 0, 0, int(Inches(2.5)), int(Inches(2.0)))
+    blk.fill.solid()
+    blk.fill.fore_color.rgb = _darken(theme.SECTION_COLORS[1], 0.45)
+    blk.line.fill.background()
+
+    # 右上三角形（type 6 = right triangle，section 2 紫）
+    tri = slide.shapes.add_shape(6,
+        int(sw - Inches(2.2)), 0, int(Inches(2.2)), int(Inches(2.0)))
+    tri.fill.solid()
+    tri.fill.fore_color.rgb = _darken(theme.SECTION_COLORS[2], 0.45)
+    tri.line.fill.background()
+
+    # 右中菱形（type 4 = diamond，section 3 青綠）
+    dia = slide.shapes.add_shape(4,
+        int(sw - Inches(1.5)), int(Inches(2.1)), int(Inches(1.3)), int(Inches(1.1)))
+    dia.fill.solid()
+    dia.fill.fore_color.rgb = _darken(theme.SECTION_COLORS[3], 0.45)
+    dia.line.fill.background()
+
+    # 右下小方塊（section 4 金）
+    sq = slide.shapes.add_shape(1,
+        int(sw - Inches(0.7)), int(sh - Inches(0.7)), int(Inches(0.6)), int(Inches(0.6)))
+    sq.fill.solid()
+    sq.fill.fore_color.rgb = _darken(theme.SECTION_COLORS[4], 0.5)
+    sq.line.fill.background()
+
+    # 全寬螢光青綠粗線（標題上方）
+    line_y = int(Inches(1.55))
+    top_line = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT, 0, line_y, sw, line_y)
+    top_line.line.color.rgb = theme.ACCENT2_COLOR
+    top_line.line.width = Pt(4.0)
 
     # 主標題
     add_textbox(slide, data["title"],
-                int(Inches(0.5)), int(Inches(1.6)), int(Inches(9.0)), int(Inches(1.8)),
+                int(Inches(0.3)), int(Inches(1.65)), int(Inches(9.4)), int(Inches(1.5)),
                 font_name=theme.FONT_TITLE, font_size=Pt(48),
                 color=theme.PRIMARY_COLOR, bold=True, align=PP_ALIGN.CENTER)
 
-    # accent 粗線
-    dec_line = slide.shapes.add_connector(
-        MSO_CONNECTOR.STRAIGHT,
-        int(Inches(1.5)), int(Inches(3.5)),
-        int(Inches(8.5)), int(Inches(3.5))
-    )
-    dec_line.line.color.rgb = theme.ACCENT_COLOR
-    dec_line.line.width = Pt(3.0)
+    # 全寬鮮紅粗線（分隔標題/副標題）
+    red_y = int(Inches(3.25))
+    red_line = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT, 0, red_y, sw, red_y)
+    red_line.line.color.rgb = theme.ACCENT_COLOR
+    red_line.line.width = Pt(4.0)
+
+    # 標題左側 accent bar
+    for ax in [int(Inches(0.3)), int(sw - Inches(0.35))]:
+        acc = slide.shapes.add_shape(1,
+            ax, int(Inches(1.7)), int(Inches(0.05)), int(Inches(1.4)))
+        acc.fill.solid()
+        acc.fill.fore_color.rgb = theme.PRIMARY_COLOR
+        acc.line.fill.background()
 
     # 副標題
     add_textbox(slide, data["subtitle"],
-                int(Inches(0.5)), int(Inches(3.65)), int(Inches(9.0)), int(Inches(1.4)),
+                int(Inches(0.4)), int(Inches(3.32)), int(Inches(9.2)), int(Inches(1.0)),
                 font_size=theme.SUBTITLE_SIZE,
-                color=theme.SECTION_COLORS[1], align=PP_ALIGN.CENTER)
+                color=theme.ACCENT2_COLOR, align=PP_ALIGN.CENTER)
 
-    # 左右裝飾細線
-    for x1, x2 in [(int(Inches(0.3)), int(Inches(2.5))), (int(Inches(6.5)), int(Inches(9.7)))]:
-        line = slide.shapes.add_connector(
-            MSO_CONNECTOR.STRAIGHT,
-            x1, int(Inches(6.55)), x2, int(Inches(6.55))
-        )
-        line.line.color.rgb = theme.SUBTEXT_COLOR
-        line.line.width = Pt(0.75)
-
-    # 日期 + 版號
+    # 日期 + 版號（y=4.45"，確保在畫面內）
     date_ver = data["date"]
     if data.get("version"):
         date_ver = f"{data['date']}　　{data['version']}"
     add_textbox(slide, date_ver,
-                int(Inches(0.5)), int(Inches(6.6)), int(Inches(9.0)), int(Inches(0.5)),
+                int(Inches(0.4)), int(Inches(4.45)), int(Inches(9.2)), int(Inches(0.45)),
                 font_size=theme.SMALL_SIZE,
                 color=theme.SUBTEXT_COLOR, align=PP_ALIGN.CENTER)
 
@@ -267,44 +259,67 @@ def build_cover(slide, data):
 
 
 def build_section_break(slide, data):
-    """段落過場投影片：全螢幕 section color 背景"""
+    """段落過場：頂條 + 中央面板 + accent bar"""
     section = data.get("section", 1)
     sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR)
-    dark_color = _darken(sec_color, 0.25)
+    dark_color = _darken(sec_color, 0.18)
+    sw = int(theme.SLIDE_WIDTH)
+    sh = int(theme.SLIDE_HEIGHT)
 
-    # 全螢幕背景（section color 的暗色）
     set_slide_background(slide, dark_color)
 
-    # 中央亮色大色塊
-    panel_w = int(Inches(8.0))
-    panel_h = int(Inches(2.4))
+    # 頂部全寬 section-color 粗條
+    top_bar = slide.shapes.add_shape(1, 0, 0, sw, int(Inches(0.18)))
+    top_bar.fill.solid()
+    top_bar.fill.fore_color.rgb = sec_color
+    top_bar.line.fill.background()
+
+    # 中央面板
+    panel_w = int(Inches(8.4))
+    panel_h = int(Inches(2.5))
     panel_x = int((theme.SLIDE_WIDTH - panel_w) // 2)
-    panel_y = int(Inches(1.8))
+    panel_y = int(Inches(1.2))
     panel = slide.shapes.add_shape(1, panel_x, panel_y, panel_w, panel_h)
     panel.fill.solid()
-    panel.fill.fore_color.rgb = _darken(sec_color, 0.4)
+    panel.fill.fore_color.rgb = _darken(sec_color, 0.28)
     panel.line.color.rgb = sec_color
     panel.line.width = Pt(2.0)
 
-    # 段落名稱（超大、居中）
+    # 左側粗 accent bar
+    acc_bar = slide.shapes.add_shape(1,
+        panel_x, panel_y, int(Inches(0.1)), panel_h)
+    acc_bar.fill.solid()
+    acc_bar.fill.fore_color.rgb = sec_color
+    acc_bar.line.fill.background()
+
+    # 段落大標題
     add_textbox(slide, data["title"],
-                panel_x, panel_y,
-                panel_w, int(Inches(1.5)),
+                panel_x + int(Inches(0.2)), panel_y,
+                panel_w - int(Inches(0.2)), int(Inches(1.5)),
                 font_name=theme.FONT_TITLE, font_size=Pt(44),
                 color=theme.TEXT_COLOR, bold=True, align=PP_ALIGN.CENTER)
 
-    # 小字副標題
+    # 副標題
     add_textbox(slide, data.get("subtitle", ""),
-                panel_x, panel_y + int(Inches(1.5)),
-                panel_w, int(Inches(0.8)),
+                panel_x + int(Inches(0.2)),
+                panel_y + int(Inches(1.55)),
+                panel_w - int(Inches(0.2)),
+                int(Inches(0.85)),
                 font_size=Pt(18),
                 color=sec_color, align=PP_ALIGN.CENTER)
 
-    # 底部 section number 裝飾
+    # 底部全寬水平線
+    bottom_line_y = int(Inches(4.6))
+    b_line = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT, 0, bottom_line_y, sw, bottom_line_y)
+    b_line.line.color.rgb = sec_color
+    b_line.line.width = Pt(1.5)
+
+    # "Section N" 標籤（確保在 4.8"，畫面內）
     sec_num_text = f"Section {section}"
     add_textbox(slide, sec_num_text,
-                int(Inches(0.3)), int(Inches(6.2)),
-                int(Inches(2.0)), int(Inches(0.4)),
+                int(Inches(0.4)), int(Inches(4.72)),
+                int(Inches(2.5)), int(Inches(0.35)),
                 font_size=Pt(12), color=sec_color)
 
     if data.get("_slide_num"):
@@ -315,21 +330,19 @@ def build_bullets(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
     section = data.get("section", 0)
     add_title_bar(slide, data["title"], section)
+    add_content_panel(slide)
 
-    content_top = int(theme.TITLE_BAR_HEIGHT) + int(Inches(0.1))
-    content_h = int(theme.SLIDE_HEIGHT - theme.TITLE_BAR_HEIGHT - Inches(0.6))
-    add_content_panel(slide, content_top, content_h)
+    sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
 
-    left = int(Inches(0.5))
-    top = int(theme.TITLE_BAR_HEIGHT) + int(Inches(0.2))
-    width = int(Inches(8.8))
-    height = content_h - int(Inches(0.15))
-
-    txBox = slide.shapes.add_textbox(left, top, width, height)
+    txBox = slide.shapes.add_textbox(
+        int(theme.CONTENT_LEFT + Inches(0.15)),
+        int(theme.CONTENT_TOP + Inches(0.1)),
+        int(theme.CONTENT_WIDTH - Inches(0.3)),
+        int(theme.CONTENT_HEIGHT - theme.NOTE_HEIGHT - Inches(0.15))
+    )
     tf = txBox.text_frame
     tf.word_wrap = True
     first = True
-    sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
 
     for bullet in data["bullets"]:
         if first:
@@ -355,7 +368,6 @@ def build_bullets(slide, data):
                 run.font.color.rgb = sec_color
             else:
                 run.text = "● " + bullet
-                run.font.bold = False
                 run.font.color.rgb = theme.TEXT_COLOR
             run.font.size = theme.BODY_SIZE
             p.space_before = Pt(5)
@@ -371,40 +383,35 @@ def build_two_col(slide, data):
     section = data.get("section", 0)
     add_title_bar(slide, data["title"], section)
 
-    content_top = int(theme.TITLE_BAR_HEIGHT) + int(Inches(0.1))
-    content_h = int(theme.SLIDE_HEIGHT - theme.TITLE_BAR_HEIGHT - Inches(0.6))
-    col_w = int(Inches(4.15))
-    gap = int(Inches(0.5))
-    left_x = int(Inches(0.25))
-    right_x = left_x + col_w + gap
+    sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.ACCENT_COLOR
+    col_w = int((theme.CONTENT_WIDTH - theme.GUTTER) // 2)
+    left_x = int(theme.CONTENT_LEFT)
+    right_x = int(theme.CONTENT_LEFT + col_w + theme.GUTTER)
+    ct = int(theme.CONTENT_TOP)
+    ch = int(theme.CONTENT_HEIGHT)
 
-    # 左右各一個內容面板
-    add_content_panel(slide, content_top, content_h, left=left_x, width=col_w)
-    add_content_panel(slide, content_top, content_h, left=right_x, width=col_w)
+    add_content_panel(slide, top=ct, height=ch, left=left_x, width=col_w)
+    add_content_panel(slide, top=ct, height=ch, left=right_x, width=col_w)
 
     # 中間分隔線
-    div_x = int(left_x + col_w + gap // 2)
+    div_x = int(left_x + col_w + theme.GUTTER // 2)
     div = slide.shapes.add_connector(
-        MSO_CONNECTOR.STRAIGHT,
-        div_x, content_top,
-        div_x, content_top + content_h
-    )
-    div.line.color.rgb = theme.PANEL_BORDER
-    div.line.width = Pt(0.75)
+        MSO_CONNECTOR.STRAIGHT, div_x, ct, div_x, ct + ch)
+    div.line.color.rgb = sec_color
+    div.line.width = Pt(1.0)
 
     def add_col(title, bullets, col_left):
-        sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.ACCENT_COLOR
         add_textbox(slide, title,
-                    col_left + int(Inches(0.1)),
-                    content_top + int(Inches(0.1)),
-                    col_w - int(Inches(0.2)),
+                    col_left + int(Inches(0.15)),
+                    ct + int(Inches(0.1)),
+                    col_w - int(Inches(0.3)),
                     int(Inches(0.45)),
                     font_size=Pt(17), color=sec_color, bold=True)
         txBox = slide.shapes.add_textbox(
-            col_left + int(Inches(0.1)),
-            content_top + int(Inches(0.6)),
-            col_w - int(Inches(0.2)),
-            content_h - int(Inches(0.7))
+            col_left + int(Inches(0.15)),
+            ct + int(Inches(0.6)),
+            col_w - int(Inches(0.3)),
+            ch - int(Inches(0.7))
         )
         tf = txBox.text_frame
         tf.word_wrap = True
@@ -419,7 +426,6 @@ def build_two_col(slide, data):
             run.text = b
             if b == "":
                 run.font.size = Pt(6)
-                p.space_before = Pt(2)
             elif b.startswith("  "):
                 run.font.size = Pt(13)
                 run.font.color.rgb = theme.SUBTEXT_COLOR
@@ -444,14 +450,17 @@ def build_table(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
     section = data.get("section", 0)
     add_title_bar(slide, data["title"], section)
+    add_content_panel(slide)
 
     sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
     rows = len(data["rows"]) + 1
     cols = len(data["headers"])
-    left = int(Inches(0.25))
-    top = int(theme.TITLE_BAR_HEIGHT) + int(Inches(0.15))
-    width = int(Inches(9.5))
-    height = int(Inches(0.52) * rows + Inches(0.1))
+    left = int(theme.CONTENT_LEFT + Inches(0.05))
+    top = int(theme.CONTENT_TOP + Inches(0.05))
+    width = int(theme.CONTENT_WIDTH - Inches(0.1))
+    max_h = int(theme.CONTENT_HEIGHT - Inches(0.5))
+    height = min(int(Inches(0.5) * rows + Inches(0.1)), max_h)
+
     table = slide.shapes.add_table(rows, cols, left, top, width, height).table
     col_width = int(width / cols)
     for i in range(cols):
@@ -469,8 +478,8 @@ def build_table(slide, data):
         p = cell.text_frame.paragraphs[0]
         run = p.runs[0] if p.runs else p.add_run()
         run.font.bold = True
-        run.font.size = Pt(15)
-        run.font.color.rgb = theme.TEXT_COLOR
+        run.font.size = Pt(14)
+        run.font.color.rgb = RGBColor(0x0d, 0x11, 0x17)  # 深色字在亮色表頭上
         run.font.name = theme.FONT_BODY
         p.alignment = PP_ALIGN.CENTER
 
@@ -505,38 +514,29 @@ def build_flow(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
     section = data.get("section", 0)
     add_title_bar(slide, data["title"], section)
+    add_content_panel(slide)
 
     sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
-    dark_sec = _darken(sec_color, 0.35)
+    dark_sec = _darken(sec_color, 0.30)
 
     items = data["flow_items"]
     n = len(items)
-    box_w = int(Inches(1.55))
-    box_h = int(Inches(1.1))
-    gap = int(Inches(0.18))
+    box_w = int(Inches(1.5))
+    gap = int(Inches(0.4))    # 從 0.18" 加大到 0.4"，箭頭清晰可見
+    box_h = int(Inches(1.05))
     total_w = n * box_w + (n - 1) * gap
     start_x = int((theme.SLIDE_WIDTH - total_w) // 2)
-    y = int(Inches(2.2))
+    # 垂直置中在 content area
+    y = int(theme.CONTENT_TOP + (theme.CONTENT_HEIGHT - box_h) // 2)
 
     for i, (label, desc) in enumerate(items):
         x = int(start_x + i * (box_w + gap))
-        # 圓角矩形（shape type 5）
         shape = slide.shapes.add_shape(5, x, y, box_w, box_h)
         shape.fill.solid()
         shape.fill.fore_color.rgb = dark_sec
         shape.line.color.rgb = sec_color
         shape.line.width = Pt(1.5)
-        # 設定圓角
-        adj = shape._element.spPr.find(qn('a:prstGeom'))
-        if adj is not None:
-            avLst = adj.find(qn('a:avLst'))
-            if avLst is not None:
-                for gd in avLst.findall(qn('a:gd')):
-                    avLst.remove(gd)
-                gd_el = OxmlElement('a:gd')
-                gd_el.set('name', 'adj')
-                gd_el.set('fmla', 'val 20000')
-                avLst.append(gd_el)
+        _set_rounded_corner(shape, 20000)
 
         tf = shape.text_frame
         tf.word_wrap = True
@@ -545,7 +545,6 @@ def build_flow(slide, data):
         tf.margin_top = int(Inches(0.08))
         tf.margin_bottom = int(Inches(0.05))
 
-        # label + desc 合在方塊內兩行
         p = tf.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         run = p.add_run()
@@ -566,9 +565,7 @@ def build_flow(slide, data):
             arr_x2 = int(x + box_w + gap)
             arr_y = int(y + box_h // 2)
             arr = slide.shapes.add_connector(
-                MSO_CONNECTOR.STRAIGHT,
-                arr_x1, arr_y, arr_x2, arr_y
-            )
+                MSO_CONNECTOR.STRAIGHT, arr_x1, arr_y, arr_x2, arr_y)
             arr.line.color.rgb = sec_color
             arr.line.width = Pt(2.0)
             _add_arrowhead(arr)
@@ -584,12 +581,15 @@ def build_stack_diagram(slide, data):
     section = data.get("section", 0)
     add_title_bar(slide, data["title"], section)
 
+    sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
     layers = data["layers"]
     n = len(layers)
-    box_h = int(Inches(0.55))
-    gap = int(Inches(0.06))
-    total_h = n * (box_h + gap)
-    start_y = int((int(theme.SLIDE_HEIGHT) - total_h) // 2 + Inches(0.5))
+    box_h = int(Inches(0.42))   # 縮小：避免超出畫面
+    gap = int(Inches(0.04))
+    total_h = n * (box_h + gap) - gap
+    # 垂直置中在 content area
+    start_y = int(theme.CONTENT_TOP + (theme.CONTENT_HEIGHT - total_h) // 2)
+
     color_map = {
         "#2d5a27": RGBColor(0x2d, 0x5a, 0x27),
         "#1a3a6b": RGBColor(0x1a, 0x3a, 0x6b),
@@ -598,40 +598,44 @@ def build_stack_diagram(slide, data):
         "#3a3a00": RGBColor(0x3a, 0x3a, 0x00),
     }
 
+    box_left = int(theme.CONTENT_LEFT + Inches(0.3))
+    box_w = int(Inches(7.2))
+
     for i, layer_info in enumerate(layers):
         label, sublabel, color_hex = layer_info
         y = int(start_y + i * (box_h + gap))
         fill_color = color_map.get(color_hex, RGBColor(0x1a, 0x3a, 0x6b))
-        border_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
 
-        shape = slide.shapes.add_shape(1, int(Inches(1.0)), y, int(Inches(8.0)), box_h)
+        shape = slide.shapes.add_shape(1, box_left, y, box_w, box_h)
         shape.fill.solid()
         shape.fill.fore_color.rgb = fill_color
-        shape.line.color.rgb = border_color
+        shape.line.color.rgb = sec_color
         shape.line.width = Pt(1.5)
+
         tf = shape.text_frame
         p = tf.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         run = p.add_run()
         run.text = label
-        run.font.size = Pt(16)
+        run.font.size = Pt(14)
         run.font.color.rgb = theme.TEXT_COLOR
         run.font.bold = True
+
         if sublabel:
-            add_textbox(slide, sublabel,
-                        int(Inches(9.2)), y, int(Inches(0.8)), box_h,
-                        font_size=Pt(10), color=theme.SUBTEXT_COLOR)
+            sub_left = int(box_left + box_w + Inches(0.1))
+            sub_w = int(theme.CONTENT_RIGHT - sub_left)
+            if sub_w > 0:
+                add_textbox(slide, sublabel, sub_left, y, sub_w, box_h,
+                            font_size=Pt(10), color=theme.SUBTEXT_COLOR)
 
         # 層間向下箭頭
         if i < n - 1:
-            arr_x = int(Inches(4.95))
+            arr_x = int(box_left + box_w // 2)
             arr_y1 = int(y + box_h)
             arr_y2 = int(y + box_h + gap)
             arr = slide.shapes.add_connector(
-                MSO_CONNECTOR.STRAIGHT,
-                arr_x, arr_y1, arr_x, arr_y2
-            )
-            arr.line.color.rgb = border_color
+                MSO_CONNECTOR.STRAIGHT, arr_x, arr_y1, arr_x, arr_y2)
+            arr.line.color.rgb = sec_color
             arr.line.width = Pt(1.5)
 
     if "note" in data:
@@ -647,48 +651,56 @@ def build_stack_diagram_annotated(slide, data):
 
     layers = data["layers"]
     n = len(layers)
-    box_h = int(Inches(0.58))
-    gap = int(Inches(0.06))
-    start_y = int(theme.TITLE_BAR_HEIGHT) + int(Inches(0.15))
-    status_colors = {
+    box_h = int(Inches(0.44))   # 縮小：更安全
+    gap = int(Inches(0.04))
+    start_y = int(theme.CONTENT_TOP + Inches(0.05))
+
+    status_fills = {
         "normal":  RGBColor(0x1a, 0x3a, 0x6b),
         "warning": RGBColor(0x6b, 0x4a, 0x00),
         "danger":  RGBColor(0x6b, 0x1a, 0x1a),
         "source":  RGBColor(0x1a, 0x5a, 0x27),
     }
-    status_border = {
+    status_borders = {
         "normal":  theme.PRIMARY_COLOR,
         "warning": RGBColor(0xff, 0xcc, 0x44),
         "danger":  theme.ACCENT_COLOR,
         "source":  theme.SOURCE_ANNOTATION_COLOR,
     }
 
+    box_left = int(theme.CONTENT_LEFT)
+    box_w = int(Inches(5.2))
+    ann_left = int(theme.CONTENT_LEFT + Inches(5.4))
+    ann_w = int(theme.CONTENT_RIGHT - ann_left)
+
     for i, (label, annotation, status) in enumerate(layers):
         y = int(start_y + i * (box_h + gap))
-        fill_color = status_colors.get(status, status_colors["normal"])
-        border_color = status_border.get(status, theme.PRIMARY_COLOR)
+        fill_color = status_fills.get(status, status_fills["normal"])
+        border_color = status_borders.get(status, theme.PRIMARY_COLOR)
         border_w = Pt(2.5) if status in ("danger", "warning") else Pt(1.5)
 
-        shape = slide.shapes.add_shape(1, int(Inches(0.3)), y, int(Inches(5.5)), box_h)
+        shape = slide.shapes.add_shape(1, box_left, y, box_w, box_h)
         shape.fill.solid()
         shape.fill.fore_color.rgb = fill_color
         shape.line.color.rgb = border_color
         shape.line.width = border_w
+
         tf = shape.text_frame
         p = tf.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         run = p.add_run()
         run.text = label
-        run.font.size = Pt(15)
+        run.font.size = Pt(14)
         run.font.color.rgb = theme.TEXT_COLOR
         run.font.bold = True
 
         ann_color = theme.ACCENT_COLOR if status in ("danger", "warning") else theme.SUBTEXT_COLOR
         if status == "source":
             ann_color = theme.SOURCE_ANNOTATION_COLOR
-        add_textbox(slide, annotation,
-                    int(Inches(6.0)), y + int(Inches(0.1)), int(Inches(3.8)), box_h,
-                    font_size=Pt(14), color=ann_color)
+        if ann_w > 0:
+            add_textbox(slide, annotation,
+                        ann_left, y + int(Inches(0.05)), ann_w, box_h,
+                        font_size=Pt(13), color=ann_color)
 
     if "note" in data:
         add_note(slide, data["note"])
@@ -700,16 +712,13 @@ def build_references(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
     section = data.get("section", 0)
     add_title_bar(slide, data.get("qanda", "Q&A") + " / 參考資料", section)
-
-    content_top = int(theme.TITLE_BAR_HEIGHT) + int(Inches(0.15))
-    content_h = int(theme.SLIDE_HEIGHT - theme.TITLE_BAR_HEIGHT - Inches(0.5))
-    add_content_panel(slide, content_top, content_h)
+    add_content_panel(slide)
 
     txBox = slide.shapes.add_textbox(
-        int(Inches(0.5)),
-        content_top + int(Inches(0.15)),
-        int(Inches(9.0)),
-        content_h - int(Inches(0.3))
+        int(theme.CONTENT_LEFT + Inches(0.2)),
+        int(theme.CONTENT_TOP + Inches(0.15)),
+        int(theme.CONTENT_WIDTH - Inches(0.4)),
+        int(theme.CONTENT_HEIGHT - Inches(0.3))
     )
     tf = txBox.text_frame
     tf.word_wrap = True
@@ -725,7 +734,7 @@ def build_references(slide, data):
         run.font.size = Pt(13)
         run.font.color.rgb = theme.SUBTEXT_COLOR
         run.font.name = theme.FONT_BODY
-        p.space_before = Pt(3)
+        p.space_before = Pt(4)
 
     if data.get("_slide_num"):
         add_footer_bar(slide, data["_slide_num"], section)
