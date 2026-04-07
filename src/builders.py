@@ -290,10 +290,10 @@ def build_flow(slide, data):
     box_h = Inches(0.9)
     gap = Inches(0.2)
     total_w = n * box_w + (n - 1) * gap
-    start_x = (theme.SLIDE_WIDTH - total_w) / 2
+    start_x = (theme.SLIDE_WIDTH - total_w) // 2  # 整數除法，避免 float 寫入 XML
     y = Inches(2.5)
     for i, (label, desc) in enumerate(items):
-        x = start_x + i * (box_w + gap)
+        x = int(start_x + i * (box_w + gap))
         shape = slide.shapes.add_shape(1, x, y, box_w, box_h)
         shape.fill.solid()
         shape.fill.fore_color.rgb = theme.TABLE_HDR_BG
@@ -317,9 +317,9 @@ def build_flow(slide, data):
                     align=PP_ALIGN.CENTER)
         if i < n - 1:
             # 用箭頭 Connector 取代填滿矩形
-            arr_x1 = x + box_w
-            arr_x2 = x + box_w + gap
-            arr_y = y + box_h / 2
+            arr_x1 = int(x + box_w)
+            arr_x2 = int(x + box_w + gap)
+            arr_y = int(y + box_h // 2)
             arr = slide.shapes.add_connector(
                 MSO_CONNECTOR.STRAIGHT,
                 arr_x1, arr_y, arr_x2, arr_y
