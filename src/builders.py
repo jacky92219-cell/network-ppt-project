@@ -122,7 +122,10 @@ def build_cover(slide, data):
                 Inches(0.5), Inches(3.6), Inches(9.0), Inches(1.2),
                 font_size=theme.SUBTITLE_SIZE,
                 color=theme.SECTION_COLORS[1], align=PP_ALIGN.CENTER)
-    add_textbox(slide, data["date"],
+    date_ver = data["date"]
+    if data.get("version"):
+        date_ver = f"{data['date']}　　{data['version']}"
+    add_textbox(slide, date_ver,
                 Inches(0.5), Inches(6.5), Inches(9.0), Inches(0.5),
                 font_size=theme.SMALL_SIZE,
                 color=theme.SUBTEXT_COLOR, align=PP_ALIGN.CENTER)

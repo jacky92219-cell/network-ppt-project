@@ -9,6 +9,7 @@ SLIDES = [
         "subtitle": "從 PHY/MAC 到 Windows 驅動堆疊\n——為什麼無法從 Windows 取得 CSI？",
         "author": "",
         "date": "2026-04-07",
+        "version": "v1.0",
         "speaker_notes": "大家好，今天的主題是「網卡與 OS 層的關係」。我們會從 RF 工程師最熟悉的 PHY 層出發，一路向上追溯到 Windows 的應用程式層，最後回答一個很多 RF 工程師都碰過的問題：為什麼在 Windows 上無法取得網卡的 CSI 資料？\n\n這份投影片設計給有 PHY/MAC 背景的工程師，所以我不會花太多時間在 RF 基礎，而是聚焦在 OS 軟體層的架構與限制。",
     },
     # Slide 2: 大綱
