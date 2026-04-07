@@ -99,7 +99,7 @@ def build_bullets(slide, data):
         else:
             run.font.size = theme.BODY_SIZE
             run.font.color.rgb = theme.TEXT_COLOR
-            if bullet.startswith("▶") or bullet.endswith("：") or (bullet[0].isdigit() and len(bullet) > 1):
+            if bullet.startswith("▶") or bullet.endswith("：") or (len(bullet) > 1 and bullet[0].isdigit()):
                 run.font.bold = True
                 run.font.color.rgb = theme.PRIMARY_COLOR
     if "note" in data:
@@ -155,7 +155,7 @@ def build_table(slide, data):
     table = slide.shapes.add_table(rows, cols, left, top, width, height).table
     col_width = int(width / cols)
     for i in range(cols):
-        table.columns[i].width = col_width
+        table.columns[i].width = col_width if i < cols - 1 else (width - col_width * (cols - 1))
     for ci, hdr in enumerate(data["headers"]):
         cell = table.cell(0, ci)
         cell.text = hdr
@@ -192,13 +192,13 @@ def build_flow(slide, data):
     box_h = Inches(0.9)
     gap = Inches(0.2)
     total_w = n * box_w + (n - 1) * gap
-    start_x = (Inches(10) - total_w) / 2
+    start_x = (theme.SLIDE_WIDTH - total_w) / 2
     y = Inches(2.5)
     for i, (label, desc) in enumerate(items):
         x = start_x + i * (box_w + gap)
         shape = slide.shapes.add_shape(1, x, y, box_w, box_h)
         shape.fill.solid()
-        shape.fill.fore_color.rgb = RGBColor(0x0d, 0x47, 0xa1)
+        shape.fill.fore_color.rgb = theme.TABLE_HDR_BG
         shape.line.color.rgb = theme.PRIMARY_COLOR
         tf = shape.text_frame
         tf.word_wrap = True
@@ -293,7 +293,7 @@ def build_stack_diagram_annotated(slide, data):
         run.font.bold = True
         ann_color = theme.ACCENT_COLOR if status in ("danger", "warning") else theme.SUBTEXT_COLOR
         if status == "source":
-            ann_color = RGBColor(0x66, 0xff, 0x66)
+            ann_color = theme.SOURCE_ANNOTATION_COLOR
         add_textbox(slide, annotation,
                     Inches(6.0), y + Inches(0.1), Inches(3.8), box_h,
                     font_size=Pt(14), color=ann_color)

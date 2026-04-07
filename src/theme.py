@@ -10,6 +10,7 @@ TEXT_COLOR     = RGBColor(0xff, 0xff, 0xff)   # 白色文字
 SUBTEXT_COLOR  = RGBColor(0xaa, 0xcc, 0xff)   # 淡藍副文字
 TABLE_HDR_BG   = RGBColor(0x0d, 0x47, 0xa1)   # 表頭深藍
 TABLE_ROW_ALT  = RGBColor(0x1e, 0x2a, 0x4a)   # 交替列背景
+SOURCE_ANNOTATION_COLOR = RGBColor(0x66, 0xff, 0x66)  # 綠色，用於堆疊圖 source 層標注
 
 # 字型大小
 TITLE_SIZE     = Pt(36)
