@@ -30,7 +30,7 @@ def add_textbox(slide, text, left, top, width, height,
     run.font.bold = bold
     return txBox
 
-def add_title(slide, title_text):
+def add_title(slide, title_text, section: int = 0):
     """新增標準標題列"""
     left = Inches(0.4)
     top = Inches(0.2)
@@ -38,14 +38,15 @@ def add_title(slide, title_text):
     height = Inches(0.8)
     add_textbox(slide, title_text, left, top, width, height,
                 font_name=theme.FONT_TITLE, font_size=theme.TITLE_SIZE,
-                color=theme.PRIMARY_COLOR, bold=True)
+                color=get_title_color(section), bold=True)
     # 標題下方分隔線
-    line = slide.shapes.add_shape(
-        1,  # MSO_SHAPE_TYPE rectangle used as line
-        left, Inches(1.0), width, Emu(0)
+    from pptx.enum.shapes import MSO_CONNECTOR
+    connector = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT,
+        left, Inches(1.0), left + width, Inches(1.0)
     )
-    line.line.color.rgb = theme.PRIMARY_COLOR
-    line.line.width = Pt(1.5)
+    connector.line.color.rgb = get_title_color(section)
+    connector.line.width = Pt(1.5)
 
 def add_note(slide, note_text):
     """底部備註列"""
@@ -56,8 +57,36 @@ def add_note(slide, note_text):
     add_textbox(slide, f"▶ {note_text}", left, top, width, height,
                 font_size=theme.SMALL_SIZE, color=theme.SUBTEXT_COLOR)
 
+def add_slide_number(slide, number: int, section: int = 0):
+    """右下角頁碼"""
+    import theme as _theme
+    sec_color = _theme.SECTION_COLORS.get(section, _theme.SUBTEXT_COLOR) if section > 0 else _theme.SUBTEXT_COLOR
+    add_textbox(slide, str(number),
+                Inches(9.0), Inches(6.9), Inches(0.6), Inches(0.4),
+                font_size=Pt(12), color=sec_color, align=PP_ALIGN.RIGHT)
+
+def add_section_bar(slide, section: int):
+    """左側段落識別色條"""
+    if section == 0:
+        return
+    color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR)
+    bar = slide.shapes.add_shape(1,
+        Inches(0), Inches(0),
+        theme.SECTION_BAR_WIDTH, theme.SLIDE_HEIGHT)
+    bar.fill.solid()
+    bar.fill.fore_color.rgb = color
+    bar.line.fill.background()  # no border
+
+def get_title_color(section: int) -> RGBColor:
+    """根據段落取標題色"""
+    if section == 0:
+        return theme.PRIMARY_COLOR
+    return theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR)
+
 def build_cover(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
     add_textbox(slide, data["title"],
                 Inches(0.5), Inches(1.5), Inches(9.0), Inches(1.5),
                 font_name=theme.FONT_TITLE, font_size=Pt(44),
@@ -70,10 +99,14 @@ def build_cover(slide, data):
                 Inches(0.5), Inches(6.5), Inches(9.0), Inches(0.5),
                 font_size=theme.SMALL_SIZE,
                 color=theme.SUBTEXT_COLOR, align=PP_ALIGN.CENTER)
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 def build_bullets(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
-    add_title(slide, data["title"])
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
+    add_title(slide, data["title"], section)
     left = Inches(0.5)
     top = Inches(1.2)
     width = Inches(9.0)
@@ -104,10 +137,14 @@ def build_bullets(slide, data):
                 run.font.color.rgb = theme.PRIMARY_COLOR
     if "note" in data:
         add_note(slide, data["note"])
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 def build_two_col(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
-    add_title(slide, data["title"])
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
+    add_title(slide, data["title"], section)
 
     def add_col(title, bullets, left):
         add_textbox(slide, title, left, Inches(1.2), Inches(4.3), Inches(0.5),
@@ -136,16 +173,24 @@ def build_two_col(slide, data):
                     run.font.bold = True
 
     add_col(data["left_title"], data["left_bullets"], Inches(0.3))
-    div = slide.shapes.add_shape(1, Inches(4.8), Inches(1.1), Emu(0), Inches(5.5))
+    from pptx.enum.shapes import MSO_CONNECTOR
+    div = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT,
+        Inches(4.8), Inches(1.1), Inches(4.8), Inches(6.6)
+    )
     div.line.color.rgb = theme.PRIMARY_COLOR
     div.line.width = Pt(0.75)
     add_col(data["right_title"], data["right_bullets"], Inches(5.0))
     if "note" in data:
         add_note(slide, data["note"])
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 def build_table(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
-    add_title(slide, data["title"])
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
+    add_title(slide, data["title"], section)
     rows = len(data["rows"]) + 1
     cols = len(data["headers"])
     left = Inches(0.3)
@@ -182,10 +227,14 @@ def build_table(slide, data):
             run.font.name = theme.FONT_BODY
     if "note" in data:
         add_note(slide, data["note"])
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 def build_flow(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
-    add_title(slide, data["title"])
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
+    add_title(slide, data["title"], section)
     items = data["flow_items"]
     n = len(items)
     box_w = Inches(1.5)
@@ -221,10 +270,14 @@ def build_flow(slide, data):
             arr.line.color.rgb = theme.PRIMARY_COLOR
     if "note" in data:
         add_note(slide, data["note"])
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 def build_stack_diagram(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
-    add_title(slide, data["title"])
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
+    add_title(slide, data["title"], section)
     layers = data["layers"]
     n = len(layers)
     box_h = Inches(0.55)
@@ -260,10 +313,14 @@ def build_stack_diagram(slide, data):
                         font_size=Pt(10), color=theme.SUBTEXT_COLOR)
     if "note" in data:
         add_note(slide, data["note"])
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 def build_stack_diagram_annotated(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
-    add_title(slide, data["title"])
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
+    add_title(slide, data["title"], section)
     layers = data["layers"]
     n = len(layers)
     box_h = Inches(0.58)
@@ -299,10 +356,14 @@ def build_stack_diagram_annotated(slide, data):
                     font_size=Pt(14), color=ann_color)
     if "note" in data:
         add_note(slide, data["note"])
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 def build_references(slide, data):
     set_slide_background(slide, theme.BG_COLOR)
-    add_title(slide, data.get("qanda", "Q&A") + " / 參考資料")
+    section = data.get("section", 0)
+    add_section_bar(slide, section)
+    add_title(slide, data.get("qanda", "Q&A") + " / 參考資料", section)
     txBox = slide.shapes.add_textbox(Inches(0.4), Inches(1.2), Inches(9.2), Inches(5.0))
     tf = txBox.text_frame
     tf.word_wrap = True
@@ -318,6 +379,8 @@ def build_references(slide, data):
         run.font.size = Pt(13)
         run.font.color.rgb = theme.SUBTEXT_COLOR
         run.font.name = theme.FONT_BODY
+    if data.get("_slide_num"):
+        add_slide_number(slide, data["_slide_num"], section)
 
 BUILDERS = {
     "cover":                    build_cover,

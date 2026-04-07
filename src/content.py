@@ -4,6 +4,7 @@ SLIDES = [
     # Slide 1: 封面
     {
         "type": "cover",
+        "section": 0,
         "title": "網卡與 OS 層的關係",
         "subtitle": "從 PHY/MAC 到 Windows 驅動堆疊\n——為什麼無法從 Windows 取得 CSI？",
         "author": "",
@@ -13,6 +14,7 @@ SLIDES = [
     # Slide 2: 大綱
     {
         "type": "bullets",
+        "section": 0,
         "title": "大綱",
         "bullets": [
             "第一段：基礎架構（Slides 3–6）",
@@ -33,6 +35,7 @@ SLIDES = [
     # Slide 3: 802.11 RF 信號路徑
     {
         "type": "flow",
+        "section": 1,
         "title": "802.11 RF 信號路徑",
         "flow_items": [
             ("天線\n(Antenna)", "接收 RF 信號"),
@@ -47,6 +50,7 @@ SLIDES = [
     # Slide 4: PHY 層 - 什麼是 CSI
     {
         "type": "two_col",
+        "section": 1,
         "title": "PHY 層：什麼是 CSI？",
         "left_title": "RSSI（傳統方式）",
         "left_bullets": [
@@ -66,9 +70,10 @@ SLIDES = [
         "note": "CSI = H(f)：頻域通道矩陣，每對 TX-RX 天線各一組",
         "speaker_notes": "在座各位應該都知道 RSSI，但我還是簡單對比一下。RSSI 是整個頻帶的總接收功率，是一個純量值，單位 dBm。它告訴你「訊號有多強」，但不告訴你「通道長什麼樣子」。\n\nCSI 則是每個 OFDM 子載波的複數增益，包含振幅和相位。802.11n 的情況下，IWL5300 會報告 30 個子載波群組的 CSI。這個資訊豐富多了——你可以從 CSI 重建多路徑傳播特性，這就是為什麼 CSI 可以用於室內定位和手勢辨識，而 RSSI 不行。\n\nCSI 的數學表示是頻域通道矩陣 H(f)，對每對 TX-RX 天線各有一個。",
     },
-    # Slide 5: MAC 層職責
+    # Slide 5a: MAC 層職責
     {
         "type": "bullets",
+        "section": 1,
         "title": "MAC 層職責",
         "bullets": [
             "媒介存取控制：CSMA/CA（避免碰撞）",
@@ -76,17 +81,28 @@ SLIDES = [
             "Frame 組裝：802.11 Header + Payload",
             "安全：WPA2/3 加解密（CCMP/GCMP）",
             "省電機制：PS-Poll、TWT（Wi-Fi 6）",
-            "",
-            "▶ CSI 在 MAC 層的狀態",
-            "  · PHY 解調完成後 CSI 儲存於 NIC 韌體/暫存器",
-            "  · MAC 層不負責傳遞 CSI——它只處理 frame 內容",
-            "  · CSI 屬於 PHY 層 side-channel，不在 802.11 協定定義範圍內",
         ],
         "speaker_notes": "MAC 層的工作是管理「誰可以在什麼時候傳送資料」，以及確保資料的正確性。CSMA/CA 是避免碰撞的機制，ACK 確認每個封包有被收到。\n\n這裡有個重要的觀念：MAC 層完全不負責 CSI。CSI 是 PHY 層的 side-channel 資訊，不在 802.11 協定的 MAC frame 定義裡。MAC 層拿到的是已經解調完成的 frame，它不會也不需要知道每個子載波的增益。\n\n這是 CSI 在軟體堆疊中「消失」的第一個關卡。",
+    },
+    # Slide 5b: CSI 在 MAC 層的狀態
+    {
+        "type": "bullets",
+        "section": 1,
+        "title": "CSI 在 MAC 層的狀態",
+        "bullets": [
+            "▶ PHY 解調完成後 CSI 儲存於 NIC 韌體/暫存器",
+            "▶ MAC 層不負責傳遞 CSI——只處理 frame 內容",
+            "▶ CSI 屬於 PHY 層 side-channel，不在 802.11 協定範圍",
+            "",
+            "結論：CSI 從 PHY 到 MAC 已無標準傳遞路徑",
+        ],
+        "note": "MAC 層是 CSI 消失旅程的第一站——不是被「擋住」，而是從未被納入協定",
+        "speaker_notes": "這張投影片總結 CSI 在 MAC 層的關鍵觀念。接下來我們會看到 OS 軟體層如何延續這個問題。",
     },
     # Slide 6: OSI 7 層 vs Windows 元件
     {
         "type": "table",
+        "section": 1,
         "title": "OSI 7 層 vs Windows 實際元件對應",
         "headers": ["OSI 層", "標準名稱", "Windows 元件", "備註"],
         "rows": [
@@ -103,6 +119,7 @@ SLIDES = [
     # Slide 7: Windows 驅動堆疊總覽
     {
         "type": "stack_diagram",
+        "section": 2,
         "title": "Windows 網路驅動架構總覽",
         "layers": [
             ("應用程式", "User Mode", "#2d5a27"),
@@ -120,6 +137,7 @@ SLIDES = [
     # Slide 8: OEM.sys 是什麼
     {
         "type": "two_col",
+        "section": 2,
         "title": "OEM.sys：網卡廠商 Miniport Driver",
         "left_title": "職責",
         "left_bullets": [
@@ -145,6 +163,7 @@ SLIDES = [
     # Slide 9: OEM.sys 資料路徑
     {
         "type": "flow",
+        "section": 2,
         "title": "OEM.sys 的資料路徑",
         "flow_items": [
             ("NIC 韌體\n計算 CSI", "儲存於暫存器"),
@@ -156,9 +175,10 @@ SLIDES = [
         "note": "CSI 存於 NIC 暫存器，OEM.sys 只將 802.11 frame payload 上報——CSI 從未進入 NDIS 封包結構",
         "speaker_notes": "這張流程圖展示了一個 RX 封包從 NIC 韌體到應用層的路徑。\n\n注意最左邊：NIC 韌體計算 CSI 後，把結果儲存在硬體暫存器。OEM.sys 透過 DMA 讀取 RX 封包緩衝區，但這個緩衝區裡只有 802.11 frame 的內容，不含 CSI。\n\nCSI 從來沒有進入 NDIS_NET_BUFFER 這個標準封包結構。換句話說，CSI 在 OEM.sys 這一步就已經被排除在資料流之外了。\n\n這就是 CSI 消失的根本原因：不是某個軟體元件「擋住」了 CSI，而是 CSI 從一開始就沒有被放進標準的資料傳輸路徑。",
     },
-    # Slide 10: nwifi.sys 是什麼
+    # Slide 10a: nwifi.sys 職責
     {
         "type": "bullets",
+        "section": 2,
         "title": "nwifi.sys：Windows Native WiFi 驅動",
         "bullets": [
             "位置：位於 OEM.sys 上方，ndis.sys 下方",
@@ -169,18 +189,30 @@ SLIDES = [
             "  · 省電模式（Legacy PS / U-APSD）",
             "  · 掃描管理（Passive / Active Scan）",
             "  · 802.11 管理幀處理（Probe / Auth / Assoc）",
-            "",
-            "暴露給上層的介面：",
+        ],
+        "speaker_notes": "nwifi.sys 是 Windows Native WiFi 驅動，位於 OEM.sys 上方。它的職責是管理 802.11 的連線狀態。\n\n認證、漫遊、省電、掃描——這些都是 nwifi.sys 負責的。",
+    },
+    # Slide 10b: nwifi.sys 介面
+    {
+        "type": "bullets",
+        "section": 2,
+        "title": "nwifi.sys 暴露的介面",
+        "bullets": [
+            "向上暴露兩種介面：",
             "  · Native WiFi API（wlanapi.dll）→ 應用程式",
             "  · NDIS OID 介面 → tcpip.sys",
             "",
             "⚠ nwifi.sys 不處理、不儲存、不轉發任何 PHY 層原始資料",
+            "",
+            "設計目標：管理 WiFi 連線，不是提供 RF 量測",
         ],
-        "speaker_notes": "nwifi.sys 是 Windows Native WiFi 驅動，位於 OEM.sys 上方。它的職責是管理 802.11 的連線狀態。\n\n認證、漫遊、省電、掃描——這些都是 nwifi.sys 負責的。它向上暴露兩種介面：一是給應用程式用的 Native WiFi API，二是給 tcpip.sys 用的 NDIS OID 介面。\n\n重點：nwifi.sys 的設計目標是「管理 WiFi 連線」，不是「提供 RF 量測資料」。它不處理、不儲存、也不轉發任何 PHY 層的原始資訊。",
+        "note": "從 nwifi.sys 向上，PHY 層資訊已被永久丟棄",
+        "speaker_notes": "nwifi.sys 向上暴露的介面非常有限，完全沒有任何 PHY 層原始資訊的傳遞路徑。",
     },
     # Slide 11: nwifi.sys 抽象化行為
     {
         "type": "two_col",
+        "section": 2,
         "title": "nwifi.sys 的抽象化：CSI 在此消失",
         "left_title": "nwifi.sys 向上暴露的資訊",
         "left_bullets": [
@@ -205,31 +237,44 @@ SLIDES = [
         "note": "從 nwifi.sys 向上，PHY 層資訊已被永久丟棄",
         "speaker_notes": "這張兩欄表格很清楚地展示了 nwifi.sys 的抽象化代價。\n\n左邊是它向上暴露的資訊：SSID、RSSI、連線狀態、安全性設定、頻道、連線速率。這些對於管理 WiFi 連線已經足夠。\n\n右邊是它不暴露的資訊：CSI、原始 IQ 樣本、每根天線的獨立 RSSI、噪聲圖、硬體時間戳。這些都是 RF 量測需要的資料。\n\n從 nwifi.sys 向上，這些 PHY 層資訊已經被永久丟棄，無法恢復。這是架構設計的結果，不是 bug。",
     },
-    # Slide 12: NDIS 設計哲學
+    # Slide 12a: NDIS OID 機制
     {
         "type": "bullets",
+        "section": 2,
         "title": "NDIS 介面設計哲學",
         "bullets": [
             "NDIS = Network Driver Interface Specification",
-            "設計目標：讓任何網路協定可搭配任何網卡——跨廠商抽象化",
+            "設計目標：跨廠商通用——任何協定 × 任何網卡",
             "",
-            "OID（Object Identifier）機制：",
-            "  · OID_802_11_SSID           → 查詢/設定 SSID",
-            "  · OID_802_11_RSSI           → 查詢接收信號強度",
-            "  · OID_802_11_BSSID_LIST     → 掃描結果",
-            "  · OID_802_11_STATISTICS     → 封包統計",
-            "",
+            "OID（Object Identifier）查詢機制：",
+            "  · OID_802_11_SSID       → 查詢/設定 SSID",
+            "  · OID_802_11_RSSI       → 接收信號強度",
+            "  · OID_802_11_BSSID_LIST → 掃描結果",
+            "  · OID_802_11_STATISTICS → 封包統計",
+        ],
+        "speaker_notes": "理解了 OID 機制，就能理解為什麼 CSI 無法透過標準介面取得。\n\nNDIS 的核心設計目標是「跨廠商通用性」——讓 Intel 的網卡和 Broadcom 的網卡都可以用相同的 API。這個目標需要取最大公約數：只定義所有廠商都支援的功能。",
+    },
+    # Slide 12b: NDIS 與 CSI
+    {
+        "type": "bullets",
+        "section": 2,
+        "title": "NDIS 為什麼沒有 CSI？",
+        "bullets": [
             "  ❌ 無任何 OID 定義 CSI 查詢",
             "  ❌ 無任何 OID 定義子載波層級資訊",
             "",
-            "NDIS 的「通用性」正是 CSI 無法取得的根本原因：",
-            "標準化需要取最大公約數，CSI 是廠商私有的 PHY 細節",
+            "▶ 根本原因：標準化需要取最大公約數",
+            "  · Intel 5300：30 個子載波群組",
+            "  · Atheros AR9380：56 個子載波",
+            "  · 不同廠商格式完全不同，無法統一",
         ],
-        "speaker_notes": "理解了 OID 機制，就能理解為什麼 CSI 無法透過標準介面取得。\n\nNDIS 的核心設計目標是「跨廠商通用性」——讓 Intel 的網卡和 Broadcom 的網卡都可以用相同的 API。這個目標需要取最大公約數：只定義所有廠商都支援的功能。\n\nOID_802_11 系列定義了 SSID、RSSI、掃描等標準操作。但 CSI 是廠商私有的 PHY 細節，不同廠商的 CSI 格式完全不同（Intel 5300 是 30 個子載波群組，Atheros AR9380 是 56 個子載波）。把這種廠商差異標準化是不可能的，所以 NDIS 根本沒有嘗試。\n\n這就是 NDIS 通用性設計的代價。",
+        "note": "NDIS 的「通用性」正是 CSI 無法取得的根本原因",
+        "speaker_notes": "OID_802_11 系列定義了 SSID、RSSI、掃描等標準操作。但 CSI 是廠商私有的 PHY 細節，不同廠商的 CSI 格式完全不同。把這種廠商差異標準化是不可能的，所以 NDIS 根本沒有嘗試。\n\n這就是 NDIS 通用性設計的代價。",
     },
     # Slide 13: WDI
     {
         "type": "two_col",
+        "section": 2,
         "title": "WDI：Windows 10+ 新驅動模型",
         "left_title": "WDI 改變了什麼",
         "left_bullets": [
@@ -260,6 +305,7 @@ SLIDES = [
     # Slide 14: CSI 消失點分析
     {
         "type": "stack_diagram_annotated",
+        "section": 2,
         "title": "CSI 消失點分析",
         "layers": [
             ("應用程式 / WinSock", "無法感知 CSI 存在", "normal"),
@@ -275,6 +321,7 @@ SLIDES = [
     # Slide 15: 為什麼 Linux 可以
     {
         "type": "two_col",
+        "section": 3,
         "title": "為什麼 Linux 可以取得 CSI？",
         "left_title": "Linux 驅動架構",
         "left_bullets": [
@@ -308,6 +355,7 @@ SLIDES = [
     # Slide 16: linux-80211n-csitool
     {
         "type": "bullets",
+        "section": 3,
         "title": "Linux CSI Tool：linux-80211n-csitool（Intel 5300）",
         "bullets": [
             "作者：Daniel Halperin（University of Washington，2011）",
@@ -330,6 +378,7 @@ SLIDES = [
     # Slide 17: 現代 CSI 工具生態
     {
         "type": "table",
+        "section": 3,
         "title": "現代 CSI 工具生態（全部 Linux-only）",
         "headers": ["工具", "硬體", "標準", "頻寬", "特色"],
         "rows": [
@@ -346,6 +395,7 @@ SLIDES = [
     # Slide 18: Windows 替代方案 1
     {
         "type": "bullets",
+        "section": 3,
         "title": "Windows 替代方案 1：Raw Packet Capture",
         "bullets": [
             "工具：WinPcap / Npcap + Monitor Mode（若網卡支援）",
@@ -370,6 +420,7 @@ SLIDES = [
     # Slide 19: Windows 替代方案 2
     {
         "type": "bullets",
+        "section": 3,
         "title": "Windows 替代方案 2：OEM 私有 IOCTL",
         "bullets": [
             "原理：部分廠商在 OEM.sys 中保留私有控制介面",
@@ -393,6 +444,7 @@ SLIDES = [
     # Slide 20: Windows 替代方案 3
     {
         "type": "bullets",
+        "section": 3,
         "title": "Windows 替代方案 3：雙系統 / 虛擬機",
         "bullets": [
             "最實用的工程折衷方案",
@@ -420,6 +472,7 @@ SLIDES = [
     # Slide 21: 替代方案比較表
     {
         "type": "table",
+        "section": 3,
         "title": "替代方案比較",
         "headers": ["方案", "技術難度", "硬體需求", "CSI 完整度", "維護成本"],
         "rows": [
@@ -435,6 +488,7 @@ SLIDES = [
     # Slide 22: 硬體選型
     {
         "type": "table",
+        "section": 3,
         "title": "支援 CSI 的硬體選型",
         "headers": ["網卡型號", "晶片", "標準", "CSI 工具", "平台"],
         "rows": [
@@ -451,6 +505,7 @@ SLIDES = [
     # Slide 23: 架構限制總結
     {
         "type": "stack_diagram_annotated",
+        "section": 4,
         "title": "完整架構總覽：CSI 的旅程",
         "layers": [
             ("應用程式", "只能用 WinSock，看不到 PHY", "normal"),
@@ -463,10 +518,11 @@ SLIDES = [
         "note": "Windows 架構的每一層都有合理的設計動機，但合力造成了 CSI 無法取得的結果",
         "speaker_notes": "讓我們用這張總結圖回顧整個旅程。\n\n從最下面的 PHY 硬體開始，OFDM 解調計算出 CSI，儲存在 NIC 韌體的暫存器中。NIC 韌體計算完成後，這個資訊就在這裡等待被讀取。\n\nOEM.sys 是唯一有能力讀取這個資料的軟體元件，但它的設計目標不包含上報 CSI，所以它沒有這樣做。\n\n往上的每一層，從 nwifi.sys 到 NDIS 到應用程式，都沒有任何機制可以取得 CSI。每一層都有合理的設計動機，但合在一起的結果就是 CSI 無法從應用層存取。\n\n這不是一個單一決策造成的問題，而是多層架構設計累積的結果。",
     },
-    # Slide 24: 給 RF 工程師的建議
+    # Slide 24a: 建議 1-3
     {
         "type": "bullets",
-        "title": "給 RF 工程師的建議",
+        "section": 4,
+        "title": "給 RF 工程師的建議（1/2）",
         "bullets": [
             "1. 選硬體前先確認 CSI 工具支援",
             "   → Intel AX200/AX210 是目前最佳選擇",
@@ -477,23 +533,31 @@ SLIDES = [
             "",
             "3. Windows 定位為後處理平台",
             "   → MATLAB / Python 分析 CSI 資料",
-            "   → 不要嘗試在 Windows 直接取 CSI",
-            "",
+        ],
+        "speaker_notes": "基於今天的所有內容，給各位幾個具體建議。\n\n第一，買硬體前先確認 CSI 工具支援。Intel AX200/AX210 目前是最安全的選擇。\n\n第二，用 Linux 取 CSI，PicoScenes 或 FeitCSI 是推薦的工具。雙系統是最穩定的部署方式。\n\n第三，Windows 用來做後處理。你的 MATLAB 腳本、Python 分析程式、可視化工具都可以在 Windows 上跑。",
+    },
+    # Slide 24b: 建議 4-5 + 資源
+    {
+        "type": "bullets",
+        "section": 4,
+        "title": "給 RF 工程師的建議（2/2）",
+        "bullets": [
             "4. 避免的坑",
             "   ❌ 不要依賴 OEM 私有 IOCTL（維護成本極高）",
             "   ❌ 不要用 VM 取 CSI（時序不準確）",
             "   ❌ 不要購買沒有明確工具支援的網卡",
             "",
-            "5. 資源",
+            "5. 推薦資源",
             "   · PicoScenes: ps.zpj.io",
             "   · FeitCSI: feitcsi.kuskosoft.com",
             "   · CSIKit（多格式解析）: github.com/Gi-z/CSIKit",
         ],
-        "speaker_notes": "基於今天的所有內容，給各位幾個具體建議。\n\n第一，買硬體前先確認 CSI 工具支援。不要買了才發現沒有工具可以用，Intel AX200/AX210 目前是最安全的選擇。\n\n第二，用 Linux 取 CSI，PicoScenes 或 FeitCSI 是推薦的工具。雙系統是最穩定的部署方式。\n\n第三，Windows 用來做後處理。你的 MATLAB 腳本、Python 分析程式、可視化工具都可以在 Windows 上跑，只要在 Linux 上把 CSI 資料存成通用格式（.mat 或 .csv）就可以了。\n\n第四，三個要避免的坑：不要依賴 OEM 私有 IOCTL、不要用 VM 取 CSI、不要買沒有工具支援的網卡。\n\n今天的演講希望幫助各位在投入 CSI 研究前，對整個架構有清楚的認識，避免走彎路。",
+        "speaker_notes": "今天的演講希望幫助各位在投入 CSI 研究前，對整個架構有清楚的認識，避免走彎路。",
     },
     # Slide 25: Q&A / 參考資料
     {
         "type": "references",
+        "section": 4,
         "title": "參考資料",
         "refs": [
             "[1] D. Halperin et al., Tool Release: Gathering 802.11n Traces with CSI, ACM SIGCOMM, 2011. -> linux-80211n-csitool",

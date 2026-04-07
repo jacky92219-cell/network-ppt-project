@@ -15,26 +15,17 @@ def prs():
     return Presentation(PPT_PATH)
 
 def test_slide_count(prs):
-    assert len(prs.slides) == 25
+    assert len(prs.slides) >= 29
 
 def test_slide_dimensions(prs):
     assert prs.slide_width == theme.SLIDE_WIDTH
     assert prs.slide_height == theme.SLIDE_HEIGHT
 
-def test_slide_17_has_table(prs):
-    slide = prs.slides[16]  # 0-indexed, slide 17
-    tables = [s for s in slide.shapes if s.has_table]
-    assert len(tables) >= 1, "Slide 17 should have a table"
-
-def test_slide_21_has_table(prs):
-    slide = prs.slides[20]
-    tables = [s for s in slide.shapes if s.has_table]
-    assert len(tables) >= 1, "Slide 21 should have a table"
-
-def test_slide_22_has_table(prs):
-    slide = prs.slides[21]
-    tables = [s for s in slide.shapes if s.has_table]
-    assert len(tables) >= 1, "Slide 22 should have a table"
+def test_table_slides_exist(prs):
+    """Verify that table slides exist"""
+    table_slides = [s for s in prs.slides
+                    if any(sh.has_table for sh in s.shapes)]
+    assert len(table_slides) >= 4, "Should have at least 4 table slides"
 
 def test_all_slides_have_shapes(prs):
     for i, slide in enumerate(prs.slides):

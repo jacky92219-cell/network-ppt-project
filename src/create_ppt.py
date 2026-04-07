@@ -19,7 +19,8 @@ def create_presentation():
 
     blank_layout = prs.slide_layouts[6]  # completely blank layout
 
-    for slide_data in content.SLIDES:
+    for idx, slide_data in enumerate(content.SLIDES):
+        slide_data["_slide_num"] = idx + 1  # inject slide number
         slide = prs.slides.add_slide(blank_layout)
         slide_type = slide_data["type"]
         builder_fn = builders.BUILDERS.get(slide_type)

@@ -12,6 +12,15 @@ TABLE_HDR_BG   = RGBColor(0x0d, 0x47, 0xa1)   # 表頭深藍
 TABLE_ROW_ALT  = RGBColor(0x1e, 0x2a, 0x4a)   # 交替列背景
 SOURCE_ANNOTATION_COLOR = RGBColor(0x66, 0xff, 0x66)  # 綠色，用於堆疊圖 source 層標注
 
+# 段落識別色（Section Colors）
+SECTION_COLORS = {
+    1: RGBColor(0x4a, 0x9e, 0xff),  # 第一段：PHY/MAC 基礎 — 藍
+    2: RGBColor(0x9c, 0x6e, 0xff),  # 第二段：Windows 驅動堆疊 — 紫
+    3: RGBColor(0x00, 0xd9, 0xaa),  # 第三段：替代方案 — 青綠
+    4: RGBColor(0xff, 0xcc, 0x44),  # 第四段：結語 — 金
+}
+SECTION_BAR_WIDTH = Emu(91440)  # 左側段落色條寬度（0.1 inch）
+
 # 字型大小
 TITLE_SIZE     = Pt(36)
 SUBTITLE_SIZE  = Pt(24)
