@@ -1,0 +1,37 @@
+# src/create_ppt.py
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+
+from pptx import Presentation
+import theme
+import content
+import builders
+
+OUTPUT_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "output", "network-card-csi.pptx"
+)
+
+def create_presentation():
+    prs = Presentation()
+    prs.slide_width = theme.SLIDE_WIDTH
+    prs.slide_height = theme.SLIDE_HEIGHT
+
+    blank_layout = prs.slide_layouts[6]  # completely blank layout
+
+    for slide_data in content.SLIDES:
+        slide = prs.slides.add_slide(blank_layout)
+        slide_type = slide_data["type"]
+        builder_fn = builders.BUILDERS.get(slide_type)
+        if builder_fn is None:
+            print(f"WARNING: unknown slide type '{slide_type}', skipping")
+            continue
+        builder_fn(slide, slide_data)
+
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    prs.save(OUTPUT_PATH)
+    print(f"Saved: {OUTPUT_PATH}")
+    print(f"Total slides: {len(prs.slides)}")
+
+if __name__ == "__main__":
+    create_presentation()
