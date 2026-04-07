@@ -33,6 +33,13 @@ SLIDES = [
         ],
         "speaker_notes": "今天的內容分四段。\n\n第一段從 PHY/MAC 基礎出發，確保大家對 CSI 的定義有共同的認知。第二段進入 Windows 的驅動架構，這是大多數 RF 工程師比較陌生的領域。第三段是今天的核心：為什麼 Linux 可以但 Windows 不行，以及有哪些替代方案。最後給出實際的硬體選型建議。\n\n整個演講大約 45 到 60 分鐘，最後留時間 Q&A。",
     },
+    # Section Break 1: 基礎架構
+    {
+        "type": "section_break",
+        "section": 1,
+        "title": "基礎架構",
+        "subtitle": "PHY / MAC / CSI / OSI 對應",
+    },
     # Slide 3: 802.11 RF 信號路徑
     {
         "type": "flow",
@@ -116,6 +123,13 @@ SLIDES = [
         ],
         "note": "CSI 存在於 L1，NDIS 介面從 L2a 開始，兩者之間沒有標準橋接",
         "speaker_notes": "這張表是今天的地圖，後面的所有討論都會對應回這張表。\n\n最重要的觀察：CSI 存在於 L1（PHY 硬體），但 Windows 的軟體介面從 L2a 才開始（nwifi.sys 和 OEM.sys）。L1 和 L2a 之間沒有標準的橋接機制來傳遞 CSI。\n\n右邊的 Windows 元件欄位就是我們接下來要深入討論的每一個元件。請記住這個對應關係。",
+    },
+    # Section Break 2: Windows 驅動堆疊
+    {
+        "type": "section_break",
+        "section": 2,
+        "title": "Windows 驅動堆疊",
+        "subtitle": "OEM.sys → nwifi.sys → NDIS → WinSock",
     },
     # Slide 7: Windows 驅動堆疊總覽
     {
@@ -319,6 +333,13 @@ SLIDES = [
         "note": "CSI 消失於 OEM.sys ↔ nwifi.sys 介面：OEM.sys 有能力讀取但選擇不轉發，nwifi.sys 也不要求",
         "speaker_notes": "這是今天的核心投影片。讓我們總結 CSI 在哪裡消失。\n\n橙色和紅色標注的兩個元件是關鍵：OEM.sys 和 nwifi.sys。\n\nOEM.sys 有能力讀取 CSI（因為它可以直接訪問 NIC 硬體暫存器），但它不上報給 nwifi.sys。nwifi.sys 也從未向 OEM.sys 請求 CSI 資料。這個邊界就是 CSI 消失的地方。\n\n再往上，ndis.sys 沒有 CSI 的 OID 定義，tcpip.sys 只看到 IP 封包，應用程式完全感知不到 CSI 的存在。\n\n結論：CSI 的消失是多層架構決策累積的結果，每一層都有其合理性。",
     },
+    # Section Break 3: 替代方案
+    {
+        "type": "section_break",
+        "section": 3,
+        "title": "替代方案",
+        "subtitle": "Linux 生態 vs Windows 限制",
+    },
     # Slide 15: 為什麼 Linux 可以
     {
         "type": "two_col",
@@ -502,6 +523,13 @@ SLIDES = [
         ],
         "note": "採購建議：Intel AX200 M.2 網卡 + Linux 雙系統 = 最易取得的 CSI 研究平台",
         "speaker_notes": "這張表列出目前（2026 年）有明確 CSI 工具支援的網卡。\n\n如果你要買新硬體，Intel AX200 M.2 是最容易取得、工具支援最完整的選擇。它便宜（通常 500 到 1000 台幣），支援 802.11ax，PicoScenes 和 FeitCSI 都支援它。買 M.2 版本可以裝在筆電或桌機，或者用 M.2 轉 PCIe 轉接卡。\n\n如果你有 Raspberry Pi，BCM43455 晶片已經內建，Nexmon CSI 直接支援，不需要額外購買硬體，非常適合做嵌入式 CSI 採集節點。\n\nAtheros AR9380 在 OpenWRT 路由器上很常見，適合布署多點 CSI 量測環境。\n\n請避免購買沒有在這份清單上的網卡，除非你願意自己移植驅動。",
+    },
+    # Section Break 4: 結語與建議
+    {
+        "type": "section_break",
+        "section": 4,
+        "title": "結語與建議",
+        "subtitle": "硬體選型 + 環境建議",
     },
     # Slide 23: 架構限制總結
     {

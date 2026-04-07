@@ -1,5 +1,5 @@
 # src/theme.py
-from pptx.util import Pt, Emu
+from pptx.util import Pt, Emu, Inches
 from pptx.dml.color import RGBColor
 
 # 色彩
@@ -12,6 +12,10 @@ TABLE_HDR_BG   = RGBColor(0x0d, 0x47, 0xa1)   # 表頭深藍
 TABLE_ROW_ALT  = RGBColor(0x1e, 0x2a, 0x4a)   # 交替列背景
 SOURCE_ANNOTATION_COLOR = RGBColor(0x66, 0xff, 0x66)  # 綠色，用於堆疊圖 source 層標注
 
+# 面板色（內容背景面板）
+PANEL_COLOR    = RGBColor(0x10, 0x14, 0x25)   # 比 BG 更深的藍黑
+PANEL_BORDER   = RGBColor(0x2a, 0x3a, 0x5c)   # 面板邊框色
+
 # 段落識別色（Section Colors）
 SECTION_COLORS = {
     1: RGBColor(0x29, 0xb6, 0xf6),  # 第一段：PHY/MAC 基礎 — 淡藍（區別於主色）
@@ -20,6 +24,25 @@ SECTION_COLORS = {
     4: RGBColor(0xff, 0xcc, 0x44),  # 第四段：結語 — 金
 }
 SECTION_BAR_WIDTH = Emu(91440)  # 左側段落色條寬度（0.1 inch）
+
+# 標題列背景色（各段落的暗色變體）
+TITLE_BAR_HEIGHT = Inches(1.15)
+TITLE_BAR_COLORS = {
+    0: RGBColor(0x10, 0x14, 0x25),   # 封面/通用
+    1: RGBColor(0x0e, 0x3a, 0x52),   # 段落1：暗藍
+    2: RGBColor(0x2a, 0x1a, 0x55),   # 段落2：暗紫
+    3: RGBColor(0x00, 0x3a, 0x2e),   # 段落3：暗青綠
+    4: RGBColor(0x3a, 0x2a, 0x00),   # 段落4：暗金
+}
+
+# 段落名稱
+SECTION_NAMES = {
+    0: "",
+    1: "基礎架構",
+    2: "Windows 驅動堆疊",
+    3: "替代方案",
+    4: "結語",
+}
 
 # 字型大小
 TITLE_SIZE     = Pt(36)

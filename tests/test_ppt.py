@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from pptx import Presentation
 import theme
 
-PPT_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'network-card-csi.pptx')
+PPT_PATH = os.path.join(os.path.dirname(__file__), '..', 'output', 'network-card-csi-v2.0.pptx')
 
 @pytest.fixture(scope="module")
 def prs():

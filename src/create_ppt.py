@@ -9,7 +9,7 @@ import content
 import builders
 
 OUTPUT_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "output", "network-card-csi-v1.1.pptx"
+    os.path.dirname(__file__), "..", "output", "network-card-csi-v2.0.pptx"
 )
 
 def create_presentation():
