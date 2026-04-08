@@ -4,10 +4,10 @@ from pptx.dml.color import RGBColor
 
 # ─── 基礎色 ──────────────────────────────────────────────
 BG_COLOR       = RGBColor(0xff, 0xff, 0xff)   # 純白背景
-TITLE_BAR_BG   = RGBColor(0x1e, 0x3a, 0x5f)   # 深海軍藍（標題列 + 底部列）
+TITLE_BAR_BG   = RGBColor(0x2c, 0x30, 0x38)   # 炭灰（v5.1 Charcoal）
 TEXT_COLOR     = RGBColor(0x1a, 0x1a, 0x2e)   # 近黑主文字
 SUBTEXT_COLOR  = RGBColor(0x5a, 0x6a, 0x7a)   # 中灰副文字
-ACCENT_COLOR   = RGBColor(0x2e, 0x7d, 0xd1)   # 鋼藍 accent
+ACCENT_COLOR   = RGBColor(0x4a, 0x90, 0xd9)   # 天際藍 accent（v5.1 統一色）
 DIVIDER_COLOR  = RGBColor(0xe0, 0xe5, 0xed)   # 淺灰分隔線
 
 # 面板色（內容背景）
@@ -24,12 +24,13 @@ ACCENT2_COLOR  = ACCENT_COLOR
 SOURCE_ANNOTATION_COLOR = RGBColor(0x0e, 0x8f, 0x8f)  # 青藍（source 層標注）
 
 # ─── Section 識別色 ──────────────────────────────────────
+_UNIFIED_ACCENT = RGBColor(0x4a, 0x90, 0xd9)  # 統一 accent（天際藍，搭配炭灰標題列）
 SECTION_COLORS = {
-    0: RGBColor(0x2e, 0x7d, 0xd1),  # 鋼藍（封面/大綱）
-    1: RGBColor(0x2e, 0x7d, 0xd1),  # Section 1：鋼藍
-    2: RGBColor(0x4a, 0x5f, 0xc1),  # Section 2：靛藍
-    3: RGBColor(0x0e, 0x8f, 0x8f),  # Section 3：青藍
-    4: RGBColor(0xc0, 0x60, 0x2a),  # Section 4：深橙
+    0: _UNIFIED_ACCENT,
+    1: _UNIFIED_ACCENT,
+    2: _UNIFIED_ACCENT,
+    3: _UNIFIED_ACCENT,
+    4: _UNIFIED_ACCENT,
 }
 
 # ─── 標題列背景（v5 統一用 TITLE_BAR_BG）────────────────
