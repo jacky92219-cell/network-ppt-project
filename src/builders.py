@@ -78,6 +78,11 @@ def set_slide_background(slide, color: RGBColor):
     fill.fore_color.rgb = color
 
 
+def add_slide_image(slide, image_path: str, left, top, width, height):
+    """將圖片加入 slide 指定位置（維持原始比例）"""
+    slide.shapes.add_picture(image_path, int(left), int(top), int(width), int(height))
+
+
 def add_textbox(slide, text, left, top, width, height,
                 font_name=theme.FONT_BODY, font_size=theme.BODY_SIZE,
                 color=theme.TEXT_COLOR, bold=False, align=PP_ALIGN.LEFT,
@@ -176,7 +181,7 @@ def add_footer_bar(slide, number: int, section: int = 0):
                     int(Inches(5.0)), text_h,
                     font_size=theme.SMALL_SIZE, color=theme.FOOTER_TEXT)
 
-    add_textbox(slide, f"{number:02d} / 23",
+    add_textbox(slide, f"{number:02d} / 24",
                 int(theme.CONTENT_RIGHT - Inches(1.0)),
                 text_y,
                 int(Inches(1.0)), text_h,
