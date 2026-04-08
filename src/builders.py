@@ -91,8 +91,14 @@ def add_title_bar(slide, title_text: str, section: int = 0):
     sec_color = theme.SECTION_COLORS.get(section, theme.PRIMARY_COLOR) if section > 0 else theme.PRIMARY_COLOR
 
     bar = slide.shapes.add_shape(1, 0, 0, int(theme.SLIDE_WIDTH), bar_h)
-    bar.fill.solid()
-    bar.fill.fore_color.rgb = bar_color
+    # 水平漸層：左暗（title bar色）→ 右微亮（section color暗版）
+    bar.fill.gradient()
+    bar.fill.gradient_angle = 0.0  # 0° = left to right
+    stops = bar.fill.gradient_stops
+    stops[0].position = 0.0
+    stops[0].color.rgb = bar_color
+    stops[1].position = 1.0
+    stops[1].color.rgb = _darken(sec_color, 0.30)
     bar.line.fill.background()
 
     # 底部 section-color 亮線
@@ -113,7 +119,7 @@ def add_title_bar(slide, title_text: str, section: int = 0):
 
 
 def add_content_panel(slide, top=None, height=None, left=None, width=None):
-    """深色圓角矩形內容面板"""
+    """深色圓角矩形內容面板（Glassmorphism 漸層）"""
     if left is None:
         left = int(theme.CONTENT_LEFT)
     if width is None:
@@ -122,12 +128,28 @@ def add_content_panel(slide, top=None, height=None, left=None, width=None):
         top = int(theme.CONTENT_TOP)
     if height is None:
         height = int(theme.CONTENT_HEIGHT)
+
     panel = slide.shapes.add_shape(5, int(left), int(top), int(width), int(height))
-    panel.fill.solid()
-    panel.fill.fore_color.rgb = theme.PANEL_COLOR
+    # Glassmorphism: 垂直漸層（頂部較亮 → 底部較深）
+    panel.fill.gradient()
+    panel.fill.gradient_angle = 270.0  # 270° = top to bottom
+    stops = panel.fill.gradient_stops
+    stops[0].position = 0.0
+    stops[0].color.rgb = RGBColor(0x14, 0x1c, 0x27)  # 頂部：比 PANEL_COLOR 亮
+    stops[1].position = 1.0
+    stops[1].color.rgb = theme.PANEL_COLOR              # 底部：標準深色
     panel.line.color.rgb = theme.PANEL_BORDER
     panel.line.width = Pt(0.75)
     _set_rounded_corner(panel, 10000)
+
+    # Top highlight strip（模擬玻璃頂部反光）
+    highlight = slide.shapes.add_shape(1,
+        int(left) + 2, int(top) + 2,
+        int(width) - 4, int(Inches(0.025)))
+    highlight.fill.solid()
+    highlight.fill.fore_color.rgb = RGBColor(0x3a, 0x4a, 0x5c)
+    highlight.line.fill.background()
+
     return panel
 
 
