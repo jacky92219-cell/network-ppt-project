@@ -348,10 +348,10 @@ def build_bullets(slide, data):
             run.font.size = Pt(6)
         elif bullet.startswith("  "):
             run.text = "  · " + bullet.lstrip()
-            run.font.size = Pt(17)
+            run.font.size = Pt(15)
             run.font.color.rgb = theme.SUBTEXT_COLOR
             p.level = 1
-            p.space_before = Pt(2)
+            p.space_before = Pt(1)
         else:
             if (bullet.startswith("▶") or bullet.startswith("⚠")
                     or (len(bullet) > 1 and bullet[0].isdigit())):
@@ -365,8 +365,8 @@ def build_bullets(slide, data):
             else:
                 run.text = "● " + bullet.lstrip("● ")
                 run.font.color.rgb = theme.TEXT_COLOR
-            run.font.size = theme.BODY_SIZE
-            p.space_before = Pt(6)
+            run.font.size = Pt(17)
+            p.space_before = Pt(4)
 
     if "note" in data:
         add_note(slide, data["note"])
@@ -420,13 +420,13 @@ def build_two_col(slide, data):
             if b == "":
                 run.font.size = Pt(6)
             elif b.startswith("  "):
-                run.font.size = Pt(15)
+                run.font.size = Pt(13)
                 run.font.color.rgb = theme.SUBTEXT_COLOR
-                p.space_before = Pt(2)
+                p.space_before = Pt(1)
             else:
-                run.font.size = Pt(17)
+                run.font.size = Pt(15)
                 run.font.color.rgb = theme.TEXT_COLOR
-                p.space_before = Pt(5)
+                p.space_before = Pt(3)
                 if b.startswith(("✅", "❌", "⚠", "✗")):
                     run.font.bold = True
 
