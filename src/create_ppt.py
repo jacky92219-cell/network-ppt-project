@@ -10,7 +10,7 @@ import content
 import builders
 
 OUTPUT_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "output", "network-card-csi-v5.1.pptx"
+    os.path.dirname(__file__), "..", "output", "network-card-csi-v5.2.pptx"
 )
 
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), "..", "output", "images")
