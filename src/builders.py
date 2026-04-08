@@ -181,7 +181,7 @@ def add_footer_bar(slide, number: int, section: int = 0):
                     int(Inches(5.0)), text_h,
                     font_size=theme.SMALL_SIZE, color=theme.FOOTER_TEXT)
 
-    add_textbox(slide, f"{number:02d} / 25",
+    add_textbox(slide, f"{number:02d} / 26",
                 int(theme.CONTENT_RIGHT - Inches(1.0)),
                 text_y,
                 int(Inches(1.0)), text_h,

@@ -10,7 +10,7 @@ import content
 import builders
 
 OUTPUT_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "output", "network-card-csi-v5.2.pptx"
+    os.path.dirname(__file__), "..", "output", "network-card-csi-v5.3.pptx"
 )
 
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), "..", "output", "images")
@@ -22,7 +22,7 @@ SLIDE_IMAGES = {
     4:  ("slide03_rf_signal.png",    7.5,  1.10, 2.00, 1.13),  # 802.11 RF：flow 右上方空白區
     5:  ("slide04_csi_spectrum.png", 7.75, 3.30, 1.80, 1.01),  # PHY/MAC：右欄底部
     9:  ("slide08_nic_hardware.png", 7.10, 3.20, 2.30, 1.29),  # OEM.sys：右欄底部
-    17: ("slide15_linux_open.png",   7.30, 3.20, 2.25, 1.27),  # Linux：右欄底部
+    18: ("slide15_linux_open.png",   7.30, 3.20, 2.25, 1.27),  # Linux：右欄底部（+1 因新增破解OEM.sys slide）
 }
 
 
