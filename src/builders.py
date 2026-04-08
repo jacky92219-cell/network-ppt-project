@@ -108,10 +108,16 @@ def add_title_bar(slide, title_text: str, section: int = 0):
     _set_gradient_fill(bar, theme.TITLE_BAR_BG, theme.TITLE_BAR_BG_LIGHT, angle=0)
     bar.line.fill.background()
 
+    # 頂部銀白高光線（1px，金屬感）
+    highlight = slide.shapes.add_shape(1, 0, 0, int(theme.SLIDE_WIDTH), int(Inches(0.012)))
+    _set_gradient_fill(highlight,
+                       RGBColor(0x70, 0x70, 0x70),
+                       RGBColor(0x30, 0x30, 0x30), angle=0)
+    highlight.line.fill.background()
+
     accent_w = int(Inches(0.055))
     acc = slide.shapes.add_shape(1, 0, 0, accent_w, bar_h)
-    acc.fill.solid()
-    acc.fill.fore_color.rgb = sec_color
+    _set_gradient_fill(acc, theme.ACCENT_COLOR, theme.TITLE_BAR_BG_LIGHT, angle=270)
     acc.line.fill.background()
 
     add_textbox(slide, title_text,
@@ -207,24 +213,29 @@ def build_cover(slide, data):
     _set_gradient_fill(bg, theme.COVER_BG_DARK, theme.TITLE_BAR_BG, angle=225)
     bg.line.fill.background()
 
+    # 右下金屬裝飾方塊（漸層）
     deco1 = slide.shapes.add_shape(1,
         int(sw - Inches(3.0)), int(sh - Inches(2.5)),
         int(Inches(3.0)), int(Inches(2.5)))
-    deco1.fill.solid()
-    deco1.fill.fore_color.rgb = theme.COVER_DECO_DARK
+    _set_gradient_fill(deco1, theme.COVER_DECO_DARK, theme.COVER_DECO_DARKER, angle=225)
     deco1.line.fill.background()
 
     deco2 = slide.shapes.add_shape(1,
         int(sw - Inches(1.8)), int(sh - Inches(1.5)),
         int(Inches(1.8)), int(Inches(1.5)))
-    deco2.fill.solid()
-    deco2.fill.fore_color.rgb = theme.COVER_DECO_DARKER
+    _set_gradient_fill(deco2, theme.COVER_DECO_DARKER, RGBColor(0x05, 0x05, 0x05), angle=225)
     deco2.line.fill.background()
 
+    # 左側金屬 accent 條（上亮下暗）
     top_acc = slide.shapes.add_shape(1, 0, 0, int(Inches(0.08)), sh)
-    top_acc.fill.solid()
-    top_acc.fill.fore_color.rgb = sec_color
+    _set_gradient_fill(top_acc, theme.ACCENT_COLOR, theme.TITLE_BAR_BG, angle=270)
     top_acc.line.fill.background()
+
+    # 水平金屬高光線（Cover 專屬）
+    shine = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT, 0, int(Inches(1.0)), sw, int(Inches(1.0)))
+    shine.line.color.rgb = RGBColor(0x40, 0x40, 0x40)
+    shine.line.width = Pt(0.5)
 
     add_textbox(slide, data["title"],
                 int(Inches(0.5)), int(Inches(1.4)),
@@ -271,10 +282,16 @@ def build_section_break(slide, data):
     _set_gradient_fill(bg, theme.SECTION_BG_DARK, theme.SECTION_BG_LIGHT, angle=270)
     bg.line.fill.background()
 
+    # 頂部金屬漸層條
     top_bar = slide.shapes.add_shape(1, 0, 0, sw, int(Inches(0.12)))
-    top_bar.fill.solid()
-    top_bar.fill.fore_color.rgb = sec_color
+    _set_gradient_fill(top_bar, theme.ACCENT_COLOR, RGBColor(0x50, 0x50, 0x50), angle=0)
     top_bar.line.fill.background()
+
+    # 銀色高光細線
+    shine = slide.shapes.add_connector(
+        MSO_CONNECTOR.STRAIGHT, 0, int(Inches(0.12)), sw, int(Inches(0.12)))
+    shine.line.color.rgb = RGBColor(0x60, 0x60, 0x60)
+    shine.line.width = Pt(0.5)
 
     num_color = RGBColor(
         min(255, int(sec_color[0] * 0.25) + int(theme.TITLE_BAR_BG[0] * 0.75)),
