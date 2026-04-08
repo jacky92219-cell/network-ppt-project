@@ -43,6 +43,17 @@ def _lighten(color: RGBColor, factor: float = 1.5) -> RGBColor:
     )
 
 
+def _set_gradient_fill(shape, color1: RGBColor, color2: RGBColor, angle: float = 0):
+    """微妙漸層填充。angle: 0=左→右, 270=上→下, 225=左上→右下"""
+    fill = shape.fill
+    fill.gradient()
+    fill.gradient_stops[0].color.rgb = color1
+    fill.gradient_stops[0].position = 0.0
+    fill.gradient_stops[1].color.rgb = color2
+    fill.gradient_stops[1].position = 1.0
+    fill.gradient_angle = angle
+
+
 def _set_rounded_corner(shape, val: int = 16667):
     adj = shape._element.spPr.find(qn('a:prstGeom'))
     if adj is None:
@@ -94,8 +105,7 @@ def add_title_bar(slide, title_text: str, section: int = 0):
     sec_color = theme.SECTION_COLORS.get(section, theme.ACCENT_COLOR)
 
     bar = slide.shapes.add_shape(1, 0, 0, int(theme.SLIDE_WIDTH), bar_h)
-    bar.fill.solid()
-    bar.fill.fore_color.rgb = theme.TITLE_BAR_BG
+    _set_gradient_fill(bar, theme.TITLE_BAR_BG, theme.TITLE_BAR_BG_LIGHT, angle=0)
     bar.line.fill.background()
 
     accent_w = int(Inches(0.055))
@@ -110,7 +120,7 @@ def add_title_bar(slide, title_text: str, section: int = 0):
                 int(theme.CONTENT_WIDTH - Inches(1.5)),
                 bar_h - int(Inches(0.1)),
                 font_name=theme.FONT_TITLE, font_size=theme.TITLE_SIZE,
-                color=RGBColor(0xff, 0xff, 0xff), bold=True)
+                color=theme.TITLE_BAR_TEXT, bold=True)
 
     if section > 0:
         sec_label = f"Section {section}/4"
@@ -120,7 +130,7 @@ def add_title_bar(slide, title_text: str, section: int = 0):
                     int(Inches(1.4)),
                     bar_h - int(Inches(0.1)),
                     font_size=theme.SMALL_SIZE,
-                    color=RGBColor(0xb0, 0xc4, 0xde),
+                    color=theme.FOOTER_TEXT,
                     align=PP_ALIGN.RIGHT)
 
 
@@ -135,8 +145,7 @@ def add_content_panel(slide, top=None, height=None, left=None, width=None):
         height = int(theme.CONTENT_HEIGHT)
 
     panel = slide.shapes.add_shape(5, int(left), int(top), int(width), int(height))
-    panel.fill.solid()
-    panel.fill.fore_color.rgb = theme.PANEL_COLOR
+    _set_gradient_fill(panel, theme.PANEL_COLOR, theme.PANEL_COLOR_DARK, angle=270)
     panel.line.color.rgb = theme.PANEL_BORDER
     panel.line.width = Pt(0.75)
     _set_rounded_corner(panel, 8000)
@@ -149,8 +158,7 @@ def add_footer_bar(slide, number: int, section: int = 0):
     sec_name = theme.SECTION_NAMES.get(section, "")
 
     footer_bg = slide.shapes.add_shape(1, 0, footer_y, int(theme.SLIDE_WIDTH), footer_h)
-    footer_bg.fill.solid()
-    footer_bg.fill.fore_color.rgb = theme.TITLE_BAR_BG
+    _set_gradient_fill(footer_bg, theme.TITLE_BAR_BG, theme.FOOTER_BG_LIGHT, angle=0)
     footer_bg.line.fill.background()
 
     text_h = int(footer_h - Inches(0.08))
@@ -160,13 +168,13 @@ def add_footer_bar(slide, number: int, section: int = 0):
         add_textbox(slide, sec_name,
                     int(Inches(0.3)), text_y,
                     int(Inches(5.0)), text_h,
-                    font_size=theme.SMALL_SIZE, color=RGBColor(0xb0, 0xc4, 0xde))
+                    font_size=theme.SMALL_SIZE, color=theme.FOOTER_TEXT)
 
     add_textbox(slide, f"{number:02d} / 23",
                 int(theme.CONTENT_RIGHT - Inches(1.0)),
                 text_y,
                 int(Inches(1.0)), text_h,
-                font_size=theme.SMALL_SIZE, color=RGBColor(0xb0, 0xc4, 0xde),
+                font_size=theme.SMALL_SIZE, color=theme.FOOTER_TEXT,
                 align=PP_ALIGN.RIGHT)
 
 
@@ -189,24 +197,28 @@ def add_note(slide, note_text):
 # ─────────────────────── Builders ───────────────────────
 
 def build_cover(slide, data):
-    set_slide_background(slide, theme.TITLE_BAR_BG)
     section = data.get("section", 0)
     sw = int(theme.SLIDE_WIDTH)
     sh = int(theme.SLIDE_HEIGHT)
     sec_color = theme.SECTION_COLORS.get(1, theme.ACCENT_COLOR)
 
+    # 全版漸層背景（斜角：左上暗→右下稍亮）
+    bg = slide.shapes.add_shape(1, 0, 0, sw, sh)
+    _set_gradient_fill(bg, theme.COVER_BG_DARK, theme.TITLE_BAR_BG, angle=225)
+    bg.line.fill.background()
+
     deco1 = slide.shapes.add_shape(1,
         int(sw - Inches(3.0)), int(sh - Inches(2.5)),
         int(Inches(3.0)), int(Inches(2.5)))
     deco1.fill.solid()
-    deco1.fill.fore_color.rgb = RGBColor(0x0d, 0x22, 0x3d)
+    deco1.fill.fore_color.rgb = theme.COVER_DECO_DARK
     deco1.line.fill.background()
 
     deco2 = slide.shapes.add_shape(1,
         int(sw - Inches(1.8)), int(sh - Inches(1.5)),
         int(Inches(1.8)), int(Inches(1.5)))
     deco2.fill.solid()
-    deco2.fill.fore_color.rgb = RGBColor(0x07, 0x15, 0x28)
+    deco2.fill.fore_color.rgb = theme.COVER_DECO_DARKER
     deco2.line.fill.background()
 
     top_acc = slide.shapes.add_shape(1, 0, 0, int(Inches(0.08)), sh)
@@ -218,7 +230,7 @@ def build_cover(slide, data):
                 int(Inches(0.5)), int(Inches(1.4)),
                 int(Inches(9.0)), int(Inches(1.5)),
                 font_name=theme.FONT_TITLE, font_size=Pt(40),
-                color=RGBColor(0xff, 0xff, 0xff), bold=True,
+                color=theme.TITLE_BAR_TEXT, bold=True,
                 align=PP_ALIGN.LEFT)
 
     line_y = int(Inches(3.05))
@@ -232,7 +244,7 @@ def build_cover(slide, data):
                 int(Inches(0.5)), int(Inches(3.15)),
                 int(Inches(9.0)), int(Inches(1.2)),
                 font_size=Pt(22),
-                color=RGBColor(0xc8, 0xd4, 0xe8),
+                color=theme.COVER_SUBTITLE,
                 align=PP_ALIGN.LEFT)
 
     date_ver = data["date"]
@@ -242,7 +254,7 @@ def build_cover(slide, data):
                 int(Inches(0.5)), int(Inches(4.45)),
                 int(Inches(5.0)), int(Inches(0.45)),
                 font_size=Pt(14),
-                color=RGBColor(0x7a, 0x9a, 0xc0))
+                color=theme.COVER_DATE)
 
     if data.get("_slide_num"):
         add_footer_bar(slide, data["_slide_num"], section)
@@ -254,7 +266,10 @@ def build_section_break(slide, data):
     sw = int(theme.SLIDE_WIDTH)
     sh = int(theme.SLIDE_HEIGHT)
 
-    set_slide_background(slide, theme.TITLE_BAR_BG)
+    # 全版漸層背景（上暗→下稍亮）
+    bg = slide.shapes.add_shape(1, 0, 0, sw, sh)
+    _set_gradient_fill(bg, theme.SECTION_BG_DARK, theme.SECTION_BG_LIGHT, angle=270)
+    bg.line.fill.background()
 
     top_bar = slide.shapes.add_shape(1, 0, 0, sw, int(Inches(0.12)))
     top_bar.fill.solid()
@@ -276,7 +291,7 @@ def build_section_break(slide, data):
                 int(Inches(0.6)), int(Inches(1.8)),
                 int(Inches(7.0)), int(Inches(1.3)),
                 font_name=theme.FONT_TITLE, font_size=Pt(44),
-                color=RGBColor(0xff, 0xff, 0xff), bold=True)
+                color=theme.TITLE_BAR_TEXT, bold=True)
 
     add_textbox(slide, data.get("subtitle", ""),
                 int(Inches(0.6)), int(Inches(3.1)),
@@ -457,12 +472,12 @@ def build_table(slide, data):
         run = p.runs[0] if p.runs else p.add_run()
         run.font.bold = True
         run.font.size = Pt(15)
-        run.font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+        run.font.color.rgb = theme.WHITE
         run.font.name = theme.FONT_BODY
         p.alignment = PP_ALIGN.CENTER
 
     for ri, row in enumerate(data["rows"]):
-        bg = RGBColor(0xff, 0xff, 0xff) if ri % 2 == 0 else theme.TABLE_ROW_ALT
+        bg = theme.WHITE if ri % 2 == 0 else theme.TABLE_ROW_ALT
         for ci, val in enumerate(row):
             cell = table.cell(ri + 1, ci)
             cell.text = val
@@ -511,7 +526,7 @@ def build_flow(slide, data):
 
         shape = slide.shapes.add_shape(5, x, y, box_w, box_h)
         shape.fill.solid()
-        shape.fill.fore_color.rgb = RGBColor(0xff, 0xff, 0xff)
+        shape.fill.fore_color.rgb = theme.WHITE
         shape.line.color.rgb = sec_color
         shape.line.width = Pt(1.5)
         _set_rounded_corner(shape, 20000)
@@ -590,8 +605,7 @@ def build_stack_diagram(slide, data):
         fill_color = layer_colors[i]
 
         shape = slide.shapes.add_shape(1, box_left, y, box_w, box_h)
-        shape.fill.solid()
-        shape.fill.fore_color.rgb = fill_color
+        _set_gradient_fill(shape, fill_color, _lighten(fill_color, 1.15), angle=0)
         shape.line.color.rgb = sec_color
         shape.line.width = Pt(1.0)
 
@@ -601,7 +615,7 @@ def build_stack_diagram(slide, data):
         run = p.add_run()
         run.text = label
         run.font.size = Pt(14)
-        run.font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+        run.font.color.rgb = theme.WHITE
         run.font.bold = True
         run.font.name = theme.FONT_BODY
 
@@ -641,15 +655,15 @@ def build_stack_diagram_annotated(slide, data):
 
     status_fills = {
         "normal":  _darken(sec_color, 0.55),
-        "warning": RGBColor(0x92, 0x40, 0x00),
-        "danger":  RGBColor(0x8b, 0x00, 0x00),
-        "source":  RGBColor(0x00, 0x66, 0x44),
+        "warning": theme.STATUS_WARNING_FILL,
+        "danger":  theme.STATUS_DANGER_FILL,
+        "source":  theme.STATUS_SOURCE_FILL,
     }
     status_borders = {
         "normal":  sec_color,
-        "warning": RGBColor(0xff, 0xa0, 0x00),
-        "danger":  RGBColor(0xcc, 0x00, 0x00),
-        "source":  theme.SOURCE_ANNOTATION_COLOR,
+        "warning": theme.STATUS_WARNING_BORDER,
+        "danger":  theme.STATUS_DANGER_BORDER,
+        "source":  theme.STATUS_SOURCE_BORDER,
     }
 
     box_left = int(theme.CONTENT_LEFT)
@@ -675,15 +689,15 @@ def build_stack_diagram_annotated(slide, data):
         run = p.add_run()
         run.text = label
         run.font.size = Pt(14)
-        run.font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+        run.font.color.rgb = theme.WHITE
         run.font.bold = True
         run.font.name = theme.FONT_BODY
 
         ann_color = theme.SUBTEXT_COLOR
         if status == "danger":
-            ann_color = RGBColor(0xcc, 0x33, 0x33)
+            ann_color = theme.STATUS_DANGER_TEXT
         elif status == "warning":
-            ann_color = RGBColor(0xb8, 0x60, 0x00)
+            ann_color = theme.STATUS_WARNING_TEXT
         elif status == "source":
             ann_color = theme.SOURCE_ANNOTATION_COLOR
 
